@@ -6,7 +6,7 @@ This chart enables the reliable deployment of Zcash infrastructure on Kubernetes
 
 We run this using K3s on self-hosted hardware and on Vultr Kubernetes Engine. This chart is also tested on GKE Autopilot as an integration test.
 
-All of the "zec.rocks" lightwalletd servers are provisioned using this chart, and are load balanced using HAProxy on Fly.io. Refer to the [zecrocks repository](https://github.com/emersonian/zecrocks) for the source code to our load balancing approach.
+All of the "zec.rocks" lightwalletd servers are provisioned using this chart, and are load balanced using HAProxy on Fly.io. Refer to the [zecrocks repository](https://github.com/zecrocks/zecrocks) for the source code to our load balancing approach.
 
 This project is funded by [Zcash Community Grants](https://zcashcommunitygrants.org/). Progress updates are posted to a [thread on the Zcash Community Forum](https://forum.zcashcommunity.com/t/rfp-zcash-lightwalletd-infrastructure-development-and-maintenance/47080).
 
@@ -34,7 +34,7 @@ chmod +x install-traefik.sh
 3. Add the zcash-stack Helm repository to your environment:
 
 ```
-helm repo add zcash https://emersonian.github.io/zcash-stack
+helm repo add zcash https://zecrocks.github.io/zcash-stack
 helm repo update
 ```
 
