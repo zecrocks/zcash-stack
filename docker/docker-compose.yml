@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  zebra:
+    image: zfnd/zebra:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data/zebrad-cache:/var/cache/zebrad-cache
+    ports:
+      - "8233:8233" # Mainnet Network (for peer connections)
+      - "8232:8232" # Opens an RPC endpoint (for wallet storing and mining)
+    healthcheck:
+      start_period: 1m
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+    # Uncomment this section to use an external zebrad.toml config
+    # configs:
+    #   - source: zebra_config
+    #     target: /etc/zebrad/zebrad.toml
+    #     uid: '2001'
+    #     gid: '2001'
+    #     mode: 0440
+
+  lightwalletd:
+    image: electriccoinco/lightwalletd
+    depends_on:
+      zebra:
+        condition: service_started
+    restart: unless-stopped
+    environment:
+      - LWD_GRPC_PORT=9067
+      - LWD_HTTP_PORT=9068
+    configs:
+      - source: lwd_config
+        target: /etc/lightwalletd/zcash.conf
+        uid: '2002'
+        gid: '2002'
+        mode: 0440
+    volumes:
+      - litewalletd-data:/var/lib/lightwalletd/db
+    command: >
+      --no-tls-very-insecure
+      --grpc-bind-addr=0.0.0.0:9067
+      --http-bind-addr=0.0.0.0:9068
+      --zcash-conf-path=/etc/lightwalletd/zcash.conf
+      --data-dir=/var/lib/lightwalletd/db
+      --log-file=/dev/stdout
+      --log-level=7
+    ports:
+      - "9067:9067" # gRPC
+      - "9068:9068" # HTTP
+
+configs:
+  zebra_config:
+    file: ./configs/zebra.toml
+  lwd_config:
+    file: ./configs/lightwalletd.conf
+
+volumes:
+  zebrad-cache:
+    driver: local
+  litewalletd-data:
+    driver: local
+
