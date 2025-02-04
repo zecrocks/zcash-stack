@@ -64,3 +64,5 @@ It’s important to note that we will not be storing any money in our Zcash node
 
 [Work in progress: This will be posted by Wednesday! Thank you for making it this far, say Hello in Chat!]
 
+Feel like racing ahead, comfortable with a terminal, and want to use the Docker method? [Here's the process.](https://github.com/zecrocks/zcash-stack/tree/main/docker)
+
