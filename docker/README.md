@@ -16,7 +16,7 @@ To connect to it from a wallet, you'll need to expose lightwalletd's port to the
 
 There are several ways to do this. The quickest is to use Tailscale Funnel or Cloudflare Tunnel.
 
-For Cloudflare Tunnel, after installing it, run this:
+For Cloudflare Tunnel, [after installing it](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/), run this:
 
 ```
 cloudflared tunnel --url http://localhost:9067
