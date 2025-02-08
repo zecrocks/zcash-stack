@@ -16,7 +16,7 @@ services:
       interval: 15s
       timeout: 10s
       retries: 3
-      test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+      test: ["CMD-SHELL", "curl --data-binary '{\"jsonrpc\": \"2.0\", \"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
     # Uncomment this section to use an external zebrad.toml config
     # configs:
     #   - source: zebra_config
