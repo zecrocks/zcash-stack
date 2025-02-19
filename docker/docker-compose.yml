@@ -8,32 +8,28 @@ services:
       - .env
     volumes:
       - ./data/zebrad-cache:/var/cache/zebrad-cache
+    configs:
+      - source: zebra_config
+        target: /etc/zebrad/zebrad.toml
+        uid: '2001'
+        gid: '2001'
+        mode: 0440
     ports:
       - "8233:8233" # Mainnet Network (for peer connections)
-      - "8232:8232" # Opens an RPC endpoint (for wallet storing and mining)
+      - "8232:8232" # Opens an RPC endpoint
     healthcheck:
       start_period: 1m
       interval: 15s
       timeout: 10s
       retries: 3
       test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
-    # Uncomment this section to use an external zebrad.toml config
-    # configs:
-    #   - source: zebra_config
-    #     target: /etc/zebrad/zebrad.toml
-    #     uid: '2001'
-    #     gid: '2001'
-    #     mode: 0440
 
   lightwalletd:
     image: electriccoinco/lightwalletd
     depends_on:
       zebra:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
-    environment:
-      - LWD_GRPC_PORT=9067
-      - LWD_HTTP_PORT=9068
     configs:
       - source: lwd_config
         target: /etc/lightwalletd/zcash.conf
@@ -41,7 +37,7 @@ services:
         gid: '2002'
         mode: 0440
     volumes:
-      - litewalletd-data:/var/lib/lightwalletd/db
+      - lwd-cache:/var/lib/lightwalletd/db
     command: >
       --no-tls-very-insecure
       --grpc-bind-addr=0.0.0.0:9067
@@ -56,13 +52,16 @@ services:
 
 configs:
   zebra_config:
-    file: ./configs/zebra.toml
+    file: ./configs/zebrad.toml
   lwd_config:
     file: ./configs/lightwalletd.conf
 
 volumes:
-  zebrad-cache:
+  lwd-cache:
     driver: local
-  litewalletd-data:
-    driver: local
+    driver_opts:
+      type: none
+      o: bind,create=true
+      device: ${PWD}/data/lwd-cache
+    name: lwd-cache
 

@@ -1,0 +1,14 @@
+[network]
+network = "Mainnet"
+listen_addr = "0.0.0.0"
+
+[state]
+cache_dir = "/var/cache/zebrad-cache"
+
+[rpc]
+listen_addr = "0.0.0.0:8232"
+enable_cookie_auth = false
+parallel_cpu_threads = 0
+
+[tracing]
+use_color = false 
