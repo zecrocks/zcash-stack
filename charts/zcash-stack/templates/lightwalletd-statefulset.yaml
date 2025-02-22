@@ -60,6 +60,10 @@ spec:
           - /srv/lightwalletd/db_volume
           - --log-file
           - /dev/stdout
+          {{- if .Values.lightwalletd.donationAddress }}
+          - --donation-address
+          - {{ .Values.lightwalletd.donationAddress }}
+          {{- end }}
           {{- with .Values.lightwalletd.additionalArgs }}
             {{- toYaml . | nindent 10 }}
           {{- end}}
