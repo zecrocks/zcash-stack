@@ -60,6 +60,18 @@ spec:
           {{- with .Values.zcashd.additionalArgs }}
             {{- toYaml . | nindent 10 }}
           {{- end}}
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - |
+              zcash-cli -conf=/srv/zcashd/conf/zcashd.conf getblockchaininfo > /dev/null 2>&1
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
         ports:
         - containerPort: {{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}
           name: zcashd-rpc
