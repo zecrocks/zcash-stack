@@ -25,5 +25,6 @@ data:
     genproclimit={{ .Values.zcashd.genproclimit }}
     mineraddress={{ .Values.zcashd.mining_address }}
     equihashsolver=tromp
+    minetolocalwallet=0
     {{- end }}
 {{- end }}
