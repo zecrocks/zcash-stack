@@ -59,6 +59,7 @@ zcashd:
     memory: 1.5Gi
   limits:
     memory: 10Gi
+  mine: false
 
 rpc:
   credentials:
@@ -69,6 +70,7 @@ lightwalletd:
   enabled: true
   name: lightwalletd
   rpcService: zebra
+  donationAddress:
   image:
     repository: electriccoinco/lightwalletd
     tag: v0.4.17
