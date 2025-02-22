@@ -8,8 +8,8 @@ spec:
   selector:
     app: {{ .Values.zcashd.name }}
   ports:
-    - port: 8232
-      targetPort: 8232
+    - port: {{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}
+      targetPort: {{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}
       protocol: TCP
       name: rpc
 {{- end }}

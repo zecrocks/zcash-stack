@@ -60,6 +60,8 @@ zcashd:
   limits:
     memory: 10Gi
   mine: false
+  mining_address:
+  genproclimit: 1
 
 rpc:
   credentials:

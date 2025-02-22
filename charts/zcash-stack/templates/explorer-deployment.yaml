@@ -20,13 +20,21 @@ spec:
           ports:
             - containerPort: 4000
               name: explorer-http
+          livenessProbe:
+            httpGet:
+              path: /
+              port: explorer-http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           env:
             - name: EXPLORER_HOSTNAME
               value: "{{ .Values.explorer.hostname }}"
             - name: ZCASHD_HOSTNAME
               value: "{{ .Values.zcashd.name }}"
             - name: ZCASHD_PORT
-              value: "8232"
+              value: "{{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}"
             - name: ZCASHD_USERNAME
               value: "{{ .Values.rpc.credentials.rpcUser }}"
             - name: ZCASHD_PASSWORD
