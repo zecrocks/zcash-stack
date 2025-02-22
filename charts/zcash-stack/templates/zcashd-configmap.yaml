@@ -20,4 +20,10 @@ data:
     {{- if .Values.zcashd.explorer }}
     insightexplorer=1
     {{- end }}
+    {{- if .Values.zcashd.mine }}
+    gen=1
+    genproclimit={{ .Values.zcashd.genproclimit }}
+    mineraddress={{ .Values.zcashd.mining_address }}
+    equihashsolver=tromp
+    {{- end }}
 {{- end }}

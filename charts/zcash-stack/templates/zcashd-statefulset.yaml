@@ -61,9 +61,9 @@ spec:
             {{- toYaml . | nindent 10 }}
           {{- end}}
         ports:
-        - containerPort: 8232
+        - containerPort: {{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}
           name: zcashd-rpc
-        - containerPort: 8233
+        - containerPort: {{ if .Values.zcashd.testnet }}18233{{ else }}8233{{ end }}
           name: zcashd-p2p
         volumeMounts:
         - name: {{ .Values.zcashd.volumes.data.claimName | default (printf "%s-data" (.Values.zcashd.name)) }}
