@@ -43,7 +43,7 @@ spec:
       {{- end }}
       - name: init-rpc
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
-        command: ['sh', '-c', "until nc -zv {{ .Values.lightwalletd.rpcService }}:8232; do echo waiting for rpc; sleep 2; done"]
+        command: ['sh', '-c', "until nc -zv {{ .Values.lightwalletd.rpcService }}:{{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}; do echo waiting for rpc; sleep 2; done"]
       containers:
       - name: lightwalletd
         image: {{ .Values.lightwalletd.image.repository }}:{{ .Values.lightwalletd.image.tag }}@sha256:{{ .Values.lightwalletd.image.hash }}
