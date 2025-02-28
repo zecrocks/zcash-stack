@@ -15,7 +15,7 @@ data:
     [state]
     cache_dir = "/var/cache/zebrad-cache"
     [rpc]
-    listen_addr = "0.0.0.0:8232"
+    listen_addr = "0.0.0.0:{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}"
     enable_cookie_auth = false
     parallel_cpu_threads = 0
     [tracing]

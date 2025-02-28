@@ -48,9 +48,9 @@ spec:
         imagePullPolicy: {{ .Values.zebra.image.pullPolicy }}
         command: ["zebrad", "-c", "/etc/zebrad/zebrad.toml"]
         ports:
-        - containerPort: 8232
+        - containerPort: {{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}
           name: zebra-rpc
-        - containerPort: 8233
+        - containerPort: {{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}
           name: zebra-p2p
         volumeMounts:
         - name: {{ .Values.zebra.name }}-data

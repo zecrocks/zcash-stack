@@ -6,7 +6,11 @@ metadata:
 data:
   zcash.conf: |
     rpcbind={{ .Values.lightwalletd.rpcService }}
-    rpcport={{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}
+    rpcport={{ if .Values.zebra.enabled }}
+              {{- if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}
+            {{- else }}
+              {{- if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}
+            {{- end }}
     rpcuser={{ .Values.rpc.credentials.rpcUser }}
     rpcpassword={{ .Values.rpc.credentials.rpcPassword }}
 {{- end }}
