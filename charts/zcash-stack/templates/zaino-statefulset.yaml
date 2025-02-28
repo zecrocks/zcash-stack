@@ -1,0 +1,76 @@
+{{- if .Values.zaino.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.zaino.name }}
+spec:
+  serviceName: {{ .Values.zaino.name }}-service
+  replicas: {{ .Values.zaino.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.zaino.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.zaino.name }}
+    spec:
+      initContainers:
+      - name: init-perms
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            mkdir -p /home/zaino/.cache/zaino
+            chown -R 2003:2003 /home/zaino
+        volumeMounts:
+        - name: data
+          mountPath: /home/zaino/.cache/zaino
+      - name: init-rpc
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        command: ['sh', '-c', "until nc -zv {{ .Values.zaino.rpcService }}:{{ if .Values.zebra.enabled }}{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}{{ else }}{{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}{{ end }}; do echo waiting for rpc; sleep 2; done"]
+      containers:
+      - name: zaino
+        image: {{ .Values.zaino.image.repository }}:{{ .Values.zaino.image.tag }}@sha256:{{ .Values.zaino.image.hash }}
+        imagePullPolicy: {{ .Values.zaino.image.pullPolicy }}
+        command: ["/app/zainod"]
+        args:
+          - --config
+          - /etc/zaino/zaino.toml
+          {{- with .Values.zaino.additionalArgs }}
+            {{- toYaml . | nindent 10 }}
+          {{- end}}
+        ports:
+        - containerPort: 8137
+          name: grpc
+        volumeMounts:
+        - name: data
+          mountPath: /home/zaino/.cache/zaino
+        - name: config
+          mountPath: /etc/zaino
+        readinessProbe:
+          tcpSocket:
+            port: 8137
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: {{ .Values.zaino.requests.cpu }}
+            memory: {{ .Values.zaino.requests.memory }}
+          {{- if .Values.zaino.limits.memory }}
+          limits:
+            memory: {{ .Values.zaino.limits.memory }}
+          {{- end }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.zaino.name }}-config
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.zaino.volumes.data.size }}
+{{- end }} 

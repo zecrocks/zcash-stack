@@ -122,6 +122,37 @@ explorer:
     ZCASH_NETWORK: mainnet
     zcash_network: mainnet
 
+zaino:
+  enabled: false
+  name: zaino
+  ingress:
+    enabled: true
+    domains: []
+  image:
+    repository: emersonian/zcash-zaino
+    tag: 0.1.1-zr4
+    hash: cbf6882f1712eaa0713e2d46776b0517b86ae9348d44ba92ed95629984ecf9c3
+    pullPolicy: IfNotPresent
+  replicas: 1
+  rpcService: zebra
+  volumes:
+    data:
+      size: 40Gi
+  service:
+    type: ClusterIP
+    port: 8137
+  requests:
+    cpu: 0.5
+    memory: 512Mi
+  limits:
+    memory: 3Gi
+  additionalArgs: []
+  config:
+    dbSize: None
+    noSync: false
+    noDB: true
+    noState: false
+
 global:
   # TODO: minimum volume size (Vultr is 40Gi for HDD, 10Gi for SSD), backport this to Thorchain and Maya
   images:

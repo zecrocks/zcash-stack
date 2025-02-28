@@ -1,0 +1,22 @@
+{{- if and .Values.zaino.enabled .Values.zaino.ingress.enabled }}
+{{ $zainoService := .Values.zaino.name }}
+{{- range $index, $domain := .Values.zaino.ingress.domains }}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteTCP
+metadata:
+  name: tcp-ingress-route-zaino-{{ $domain }}
+spec:
+  entryPoints:
+    - websecure
+  routes:
+  - match: HostSNI(`{{ $domain }}`)
+    services:
+    - name: {{ $zainoService }}
+      port: 8137
+  tls:
+    certResolver: letsencrypt
+    domains:
+    - main: {{ $domain }}
+---
+{{- end }}
+{{- end }} 

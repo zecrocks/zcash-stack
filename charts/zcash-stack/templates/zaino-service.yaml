@@ -1,0 +1,14 @@
+{{- if .Values.zaino.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zaino.name }}
+spec:
+  type: {{ .Values.zaino.service.type }}
+  selector:
+    app: {{ .Values.zaino.name }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.zaino.service.port }}
+      targetPort: 8137
+{{- end }} 
