@@ -145,12 +145,12 @@ zaino:
     cpu: 0.5
     memory: 512Mi
   limits:
-    memory: 3Gi
+    memory: 6Gi
   additionalArgs: []
   config:
-    dbSize: None
+    dbSize: 64
     noSync: false
-    noDB: true
+    noDB: false
     noState: false
 
 global:

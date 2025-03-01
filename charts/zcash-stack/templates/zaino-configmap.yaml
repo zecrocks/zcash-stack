@@ -18,7 +18,7 @@ data:
     map_capacity = "None"
     map_shard_amount = "None"
     db_path = "/home/zaino/.cache/zaino"
-    db_size = "{{ .Values.zaino.config.dbSize }}"
+    db_size = {{ .Values.zaino.config.dbSize }}
     no_sync = {{ .Values.zaino.config.noSync }}
     no_db = {{ .Values.zaino.config.noDB }}
     no_state = {{ .Values.zaino.config.noState }}
