@@ -2,8 +2,6 @@
 
 Let's get started! The Zcash blockchain is 275gb and can take over a week to download and synchronize.
 
-Quick update: We will start tracking server uptime on February 17th, so you will have around two weeks to get yours working. Remember: we’re here to help! Message us on Session any time for support.
-
 ## First: Decide _Where_ to host Zcash.
 (Non-technical or don’t care? Use Google Cloud and Docker. Skip to the instructions below.)
 
