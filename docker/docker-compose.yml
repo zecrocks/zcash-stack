@@ -4,6 +4,8 @@ services:
   zebra:
     image: zfnd/zebra:latest
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     env_file:
       - .env
     volumes:
@@ -30,6 +32,8 @@ services:
       zebra:
         condition: service_healthy
     restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     configs:
       - source: lwd_config
         target: /etc/lightwalletd/zcash.conf
@@ -49,6 +53,13 @@ services:
     ports:
       - "9067:9067" # gRPC
       - "9068:9068" # HTTP
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 300 --cleanup --label-enable
+    restart: unless-stopped
 
 configs:
   zebra_config:
