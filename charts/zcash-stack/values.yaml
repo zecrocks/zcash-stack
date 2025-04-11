@@ -130,8 +130,8 @@ zaino:
     domains: []
   image:
     repository: emersonian/zcash-zaino
-    tag: 0.1.1-zr4
-    hash: cbf6882f1712eaa0713e2d46776b0517b86ae9348d44ba92ed95629984ecf9c3
+    tag: 0.1.2-zr4
+    hash: 9965cc15e018c2c8cc3d3ce708717f25191f00cb7175f3eb35cb1bfd993fc7d5
     pullPolicy: IfNotPresent
   replicas: 1
   rpcService: zebra
