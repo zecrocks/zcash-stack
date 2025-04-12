@@ -1,0 +1,17 @@
+network = "Mainnet"
+grpc_listen_address = "0.0.0.0:8137"
+grpc_tls = false
+tls_cert_path = "None"
+tls_key_path = "None"
+validator_listen_address = "zebra:8232"
+validator_cookie_auth = false
+validator_cookie_path = "None"
+validator_user = "None"
+validator_password = "None"
+map_capacity = "None"
+map_shard_amount = "None"
+db_path = "/home/zaino/.cache/zaino"
+db_size = "None"
+no_sync = false
+no_db = true
+no_state = false 

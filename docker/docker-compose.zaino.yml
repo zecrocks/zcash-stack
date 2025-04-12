@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  zebra:
+    image: zfnd/zebra:latest
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    env_file:
+      - .env
+    volumes:
+      - ./data/zebrad-cache:/var/cache/zebrad-cache
+    configs:
+      - source: zebra_config
+        target: /etc/zebrad/zebrad.toml
+        uid: '2001'
+        gid: '2001'
+        mode: 0440
+    ports:
+      - "8233:8233" # Mainnet Network (for peer connections)
+      - "8232:8232" # Opens an RPC endpoint
+    healthcheck:
+      start_period: 1m
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+
+  init-zaino-perms:
+    image: busybox:latest
+    command: sh -c "mkdir -p /home/zaino/.cache/zaino && chown -R 2003:2003 /home/zaino"
+    volumes:
+      - ./data/zaino-cache:/home/zaino/.cache/zaino
+    user: "root"
+
+  zaino:
+    image: emersonian/zcash-zaino:0.1.2-zr4
+    container_name: zaino
+    command: ["--config", "/etc/zaino/zaino.toml"]
+    depends_on:
+      init-zaino-perms:
+        condition: service_completed_successfully
+      zebra:
+        condition: service_healthy
+    ports:
+      - "8137:8137"
+    volumes:
+      - ./configs/zaino.toml:/etc/zaino/zaino.toml:ro
+      - ./data/zaino-cache:/home/zaino/.cache/zaino
+    user: "2003:2003"
+    restart: unless-stopped
+
+configs:
+  zebra_config:
+    file: ./configs/zebrad.toml
+  zaino_config:
+    file: ./configs/zaino.toml 

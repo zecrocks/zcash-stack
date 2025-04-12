@@ -6,6 +6,8 @@ Install Docker on your computer and check out this source code repository.
 git clone https://github.com/zecrocks/zcash-stack.git
 cd zcash-stack/docker
 docker compose up
+# Or, try it with Zaino, the replacement for lightwalletd: (don't do both)
+docker compose -f docker-compose.zaino.yml up
 ```
 
 The blockchain will be synced into the ```data``` directory, which can be useful for copying it to other devices.
