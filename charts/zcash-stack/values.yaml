@@ -15,7 +15,7 @@ zebra:
   replicas: 1
   initSnapshot:
     enabled: false
-    url: https://link.storjshare.io/s/jv62jmwhs3n6c7usknlv4ux4lbza/nodedumps/zec/zebra-2024-03-25.tar?download=1
+    url: https://link.storjshare.io/s/jx6hrssshp3rbpdmrxjiybjm3cnq/nodedumps/zec/zebra-2025-04-08.tar?download=1
   additionalEnv: {}
   volumes:
     data:
