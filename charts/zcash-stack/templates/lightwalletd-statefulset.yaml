@@ -51,7 +51,7 @@ spec:
         command: ["lightwalletd"]
         args:
           - --grpc-bind-addr
-          - 0.0.0.0:9067
+          - 0.0.0.0:{{ .Values.lightwalletd.service.port }}
           # TLS is terminated by Traefik, unencrypted traffic stays within the cluster
           - --no-tls-very-insecure
           - --zcash-conf-path 

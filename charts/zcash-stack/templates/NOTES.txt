@@ -1,0 +1,6 @@
+{{ if .Values.tor.enabled }}
+===================================================
+The Tor hidden service address can be found by running:
+kubectl exec -it {{ .Values.tor.name }}-0 -- cat /var/lib/tor/hidden_service/hostname
+===================================================
+{{ end }}
