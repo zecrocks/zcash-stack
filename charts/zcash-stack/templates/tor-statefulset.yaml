@@ -1,0 +1,55 @@
+{{- if .Values.tor.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.tor.name }}
+spec:
+  serviceName: {{ .Values.tor.name }}-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.tor.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.tor.name }}
+    spec:
+      initContainers:
+      - name: init-perms
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            mkdir -p /var/lib/tor/hidden_service
+            chown -R 100:100 /var/lib/tor
+            chmod 700 -R /var/lib/tor
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/tor
+      containers:
+      - name: tor
+        image: {{ .Values.tor.image.repository }}:{{ .Values.tor.image.tag }}@sha256:{{ .Values.tor.image.hash }}
+        imagePullPolicy: {{ .Values.tor.image.pullPolicy }}
+        ports:
+        - containerPort: 9050
+          name: socks
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/tor
+        - name: tor-config
+          mountPath: /etc/tor/torrc
+          subPath: torrc
+      volumes:
+      - name: tor-config
+        configMap:
+          name: {{ .Values.tor.name }}-config
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.tor.volumes.data.size }}
+{{- end }} 

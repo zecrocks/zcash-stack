@@ -97,4 +97,5 @@ kubectl get service -n traefik
 
 - Updated documentation to launch on AWS, GCP, and self-hosted (k3s)
 - Support for hosting a block explorer
+- Support for Zaino indexing service
 - Contribute to the P2P network by allowing inbound connections via a Kubernetes Service, only possible on Zcashd at the moment.

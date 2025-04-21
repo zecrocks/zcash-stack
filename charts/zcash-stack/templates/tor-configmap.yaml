@@ -1,0 +1,21 @@
+{{- if .Values.tor.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.tor.name }}-config
+data:
+  torrc: |
+    DataDirectory /var/lib/tor
+    RunAsDaemon 0
+    Log notice stdout
+
+    # Disable SOCKS proxy, we will only use Tor to host a hidden service    
+    SocksPort 0
+    
+    HiddenServiceDir /var/lib/tor/hidden_service/
+    {{- if eq .Values.tor.targetService "zaino" }}
+    HiddenServicePort {{ .Values.tor.hiddenServicePort }} {{ .Values.zaino.name }}:{{ .Values.zaino.service.port }}
+    {{- else if eq .Values.tor.targetService "lightwalletd" }}
+    HiddenServicePort {{ .Values.tor.hiddenServicePort }} {{ .Values.lightwalletd.name }}:{{ .Values.lightwalletd.service.port }}
+    {{- end }}
+{{- end }} 
