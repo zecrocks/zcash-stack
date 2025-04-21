@@ -1,0 +1,28 @@
+{{- if .Values.tor.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Values.tor.name }}-display-onion
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ .Values.tor.name }}-display-onion
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: display-onion-address
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        command:
+        - /bin/sh
+        - -c
+        - |
+          echo "====================================================="
+          echo "YOUR TOR HIDDEN SERVICE ONION ADDRESS CAN BE FOUND AT:"
+          echo "kubectl exec -it {{ .Values.tor.name }}-0 -- cat /var/lib/tor/hidden_service/hostname"
+          echo "====================================================="
+          echo "Note: It may take a few minutes for the hidden service to be fully accessible."
+{{- end }} 

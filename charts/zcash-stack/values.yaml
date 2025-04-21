@@ -153,6 +153,20 @@ zaino:
     noDB: false
     noState: false
 
+tor:
+  enabled: false
+  name: tor
+  targetService: zaino
+  hiddenServicePort: 443
+  image:
+    repository: osminogin/tor-simple
+    tag: 0.4.8.16
+    hash: 5ba582f1cd25aafec72cfa299a12d6b145bd9cef919c7c7831b80e10e5cc3f3e
+    pullPolicy: Always
+  volumes:
+    data:
+      size: 1Gi
+
 global:
   # TODO: minimum volume size (Vultr is 40Gi for HDD, 10Gi for SSD), backport this to Thorchain and Maya
   images:

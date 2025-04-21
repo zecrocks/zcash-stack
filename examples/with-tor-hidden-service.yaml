@@ -1,0 +1,46 @@
+ingress:
+  domains:
+    - mainnet-example.your.domain
+  # Respond to all inbound requests regardless of the domain specified in SNI
+  sniCatchallEnabled: true
+
+zebra:
+  enabled: true
+  # Optionally enable this to bootstrap the blockchain from a known state faster than a full P2P sync
+  initSnapshot:
+    enabled: false
+
+zcashd:
+  enabled: false
+
+lightwalletd:
+  enabled: true
+  # Using Zebra as the RPC service
+  rpcService: zebra
+  volumes:
+    data:
+      size: 40Gi
+
+zaino:
+  enabled: true
+  rpcService: zebra
+  volumes:
+    data:
+      size: 40Gi
+
+# Enable Tor hidden service for Zaino gRPC
+tor:
+  enabled: true
+  # Which service to expose through Tor: 'zaino' or 'lightwalletd'
+  targetService: zaino
+  # Port that the hidden service will listen on (standard HTTP port for better compatibility)
+  hiddenServicePort: 80
+  volumes:
+    data:
+      size: 1Gi
+
+# RPC is only accessible from within the cluster, not exposed to the internet
+rpc:
+  credentials:
+    rpcUser: changeThisPossibly
+    rpcPassword: toYourLiking123 

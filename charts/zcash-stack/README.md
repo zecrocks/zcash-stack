@@ -93,8 +93,36 @@ kubectl rollout restart statefulset/zcashd
 kubectl get service -n traefik
 ```
 
+## Tor Hidden Service
+
+This chart can optionally deploy a Tor hidden service to your cluster, allowing you to expose Zaino or Lightwalletd gRPC services anonymously via the Tor network with an .onion address.
+
+To enable the Tor hidden service, set the following values in your values file:
+
+```yaml
+tor:
+  enabled: true
+  # Which service to expose through Tor: 'zaino' or 'lightwalletd'
+  targetService: zaino
+  # Port that the hidden service will listen on
+  hiddenServicePort: 443
+```
+
+After deploying, you can find your .onion address with:
+
+```
+kubectl exec -it tor-0 -- cat /var/lib/tor/hidden_service/hostname
+```
+
+This allows clients to connect to your Zaino or Lightwalletd instance securely through the Tor network, even if your Kubernetes cluster is behind a firewall with no public IP or domain name. The connection is automatically encrypted end-to-end by the Tor protocol.
+
+Not many Zcash wallets support Tor hidden services yet. To test your hidden service, use the [zecping](https://github.com/zecrocks/zecping) utility while Tor is running on your local machine (Tor Browser works fine):
+
+```
+./zecping -socks localhost:9150 -addr lzzfytqg24a7v6ejqh2q4ecaop6mf62gupvdimc4ryxeixtdtzxxjmad.onion:443
+```
+
 ## Works in progress
 
 - Updated documentation to launch on AWS, GCP, and self-hosted (k3s)
-- Support for hosting a block explorer
 - Contribute to the P2P network by allowing inbound connections via a Kubernetes Service, only possible on Zcashd at the moment.
