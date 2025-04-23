@@ -25,6 +25,8 @@ services:
       timeout: 10s
       retries: 3
       test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+    networks:
+      - zcash-network
 
   lightwalletd:
     image: electriccoinco/lightwalletd
@@ -50,9 +52,10 @@ services:
       --data-dir=/var/lib/lightwalletd/db
       --log-file=/dev/stdout
       --log-level=7
-    ports:
-      - "9067:9067" # gRPC
-      - "9068:9068" # HTTP
+    # Only expose ports locally when using Caddy
+    # Caddy will handle external exposure
+    networks:
+      - zcash-network
 
   watchtower:
     image: containrrr/watchtower
@@ -60,6 +63,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 300 --cleanup --label-enable
     restart: unless-stopped
+    networks:
+      - zcash-network
 
 configs:
   zebra_config:
@@ -75,4 +80,8 @@ volumes:
       o: bind,create=true
       device: ${PWD}/data/lwd-cache
     name: lwd-cache
+
+networks:
+  zcash-network:
+    name: zcash-network
 

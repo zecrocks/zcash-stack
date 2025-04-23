@@ -1,0 +1,55 @@
+{
+	# Global options
+	email {$CADDY_EMAIL}
+	# Use HTTP challenge for development environments if needed
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# LightwalletD service
+{$LIGHTWALLETD_DOMAIN:localhost} {
+	reverse_proxy lightwalletd:9067 {
+		transport http {
+			# Speak HTTP/2 (h2c) to lightwalletd, which is running plaintext gRPC
+			versions h2c
+		}
+	}
+	
+	# HTTP API endpoint
+	handle_path /api/* {
+		reverse_proxy lightwalletd:9068
+	}
+
+	# Security headers
+	header {
+		# Enable HTTP Strict Transport Security
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		# Defense against some XSS attacks
+		X-XSS-Protection "1; mode=block"
+		# Disable content-type sniffing
+		X-Content-Type-Options "nosniff"
+		# Remove server header
+		-Server
+	}
+}
+
+# Zaino service (only in the zaino compose file)
+{$ZAINO_DOMAIN:zaino.localhost} {
+	reverse_proxy zaino:8137 {
+		transport http {
+			# Speak HTTP/2 (h2c) to zaino, which is running plaintext gRPC
+			versions h2c
+		}
+	}
+
+	# Security headers
+	header {
+		# Enable HTTP Strict Transport Security
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		# Defense against some XSS attacks
+		X-XSS-Protection "1; mode=block"
+		# Disable content-type sniffing
+		X-Content-Type-Options "nosniff"
+		# Remove server header
+		-Server
+	}
+} 

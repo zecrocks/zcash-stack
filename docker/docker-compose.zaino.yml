@@ -25,6 +25,8 @@ services:
       timeout: 10s
       retries: 3
       test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+    networks:
+      - zcash-network
 
   init-zaino-perms:
     image: busybox:latest
@@ -32,6 +34,8 @@ services:
     volumes:
       - ./data/zaino-cache:/home/zaino/.cache/zaino
     user: "root"
+    networks:
+      - zcash-network
 
   zaino:
     image: emersonian/zcash-zaino:0.1.2-zr4
@@ -42,16 +46,20 @@ services:
         condition: service_completed_successfully
       zebra:
         condition: service_healthy
-    ports:
-      - "8137:8137"
     volumes:
       - ./configs/zaino.toml:/etc/zaino/zaino.toml:ro
       - ./data/zaino-cache:/home/zaino/.cache/zaino
     user: "2003:2003"
     restart: unless-stopped
+    networks:
+      - zcash-network
 
 configs:
   zebra_config:
     file: ./configs/zebrad.toml
   zaino_config:
-    file: ./configs/zaino.toml 
+    file: ./configs/zaino.toml
+
+networks:
+  zcash-network:
+    name: zcash-network 
