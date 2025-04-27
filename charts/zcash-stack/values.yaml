@@ -46,6 +46,7 @@ zcashd:
   reindex: false
   lightwalletd: true
   explorer: false
+  wallet: false
   nodes:
    - mainnet.z.cash
   additionalArgs: []
