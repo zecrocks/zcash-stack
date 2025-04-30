@@ -51,6 +51,8 @@ In the coming weeks we’ll talk more about the upsides and downsides to our app
 
 Google Cloud offers $300 in free credits, and is our recommendation for people looking for the least technical path forward.
 
+[Vultr](https://www.vultr.com/) is another option for hosting services.
+
 Feeling adventurous? Browse ServerHunter.com for options. But contact us before paying for one, we'll help you make sure that you are picking a good option.
 
 Remember, Zcash is decentralized software! You can completely delete it and start over fresh as many times as you like. You will not cause harm to the blockchain, it is synchronized across many computers around the world.
