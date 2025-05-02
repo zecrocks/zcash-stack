@@ -43,15 +43,16 @@ There are downsides to hosting something at home, however:
 If you're comfortable with the risks, go for it! We're happy to help and will release specific guides for this in the days ahead. We run a home lab ourselves!
 
 ## Decide _How_ to host Zcash.
+Docker vs. Kubernetes: A Showdown
 
-Docker (noun): a person who loads and unloads shipping containers at a marine dock
-Docker (noun): a small town in England
-[Docker](https://www.docker.com/) (noun): an open-source software project automating the deployment of applications inside software containers 
+- Docker (noun): a person who loads and unloads shipping containers at a marine dock
+- Docker (noun): a small town in England
+- [Docker](https://www.docker.com/) (noun): an open-source software project automating the deployment of applications inside software containers 
 
 vs
 
-Kubernetes (noun): Greek work meaning a helmsman or pilot responsible for steering a ship
-[Kubernetes](https://kubernetes.io/) (noun): an open-source system that automates the deployment, scaling, and management of containerized applications
+- Kubernetes (noun): Greek work meaning a helmsman or pilot responsible for steering a ship
+- [Kubernetes](https://kubernetes.io/) (noun): an open-source system that automates the deployment, scaling, and management of containerized applications
 
 Zec.rocks runs on dedicated servers that we maintain around the world, running Zcash on an easy Kubernetes distribution called "k3s". However, as Docker can be an easier entry-point for newcomers, we recommend starting with Docker.
 
@@ -125,5 +126,9 @@ Shrek has layers like an onion. Onion browsers like [TOR](https://www.torproject
 
 Note: Currently no publicaly available lightwallets support TOR/onion addresses.
 
+## Action Item 5: Monitoring
 
+Occasionally check if your server is running using zecrock tools: [hosh Monitoring Tool](https://hosh.zec.rocks/zec)
+
+Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
 
