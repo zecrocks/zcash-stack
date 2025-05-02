@@ -1,11 +1,21 @@
 # Welcome to Sync Week!
+##  _What_ does it mean to host Zcash.
 
-Let's get started!
+A validator node for Zcash verifys and relays transactions, while maintaining a full copy of the blockchain ledger, and contributing to the consensus process that secures the network. Validator nodes independently check the validity of new blocks and transactions according to the protocol rules, help propagate data to other nodes, and ensure the integrity and decentralization of the blockchain. This typically requires reliable hardware, sufficient storage and bandwidth, and a secure, always-on internet connection.
 
-## First: Decide _Where_ to host Zcash.
-(Non-technical or don't care? Use Google Cloud and Docker. Skip to the instructions below.)
+[TODO: Insert a relevant diagram/picture]
 
-Servers are special computers that made specially with high-quality components to help them function for long periods of time with no downtime.
+## TLDR
+    1. Set up a VM on hardware of choice 
+    2. Clone the git repo (https://github.com/zecrocks/zcash-stack) 
+        ◦ Or our competitors (https://github.com/stakeholdrs/zcash-infra)
+    3. Sync the blockchain (from scratch in ~10days or from download-snapshot.sh in ~10hours)
+    4. Launch the containers via Docker or Kubernetes on your VM
+    5. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
+    6. Sit back and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
+
+## Decide _Where_ to host Zcash.
+Servers are special computers made with high-quality components to help them function for long periods of time with no downtime.
 
 ### External Hosting
 Many companies around the world offer servers for rent, hosted in special buildings called datacenters which are built to provide reliable power, cooling, and security. These companies are called "hosts" or "hosting providers" - and for big-tech's hosting offerings, "public clouds".
@@ -32,7 +42,7 @@ There are downsides to hosting something at home, however:
 
 If you're comfortable with the risks, go for it! We're happy to help and will release specific guides for this in the days ahead. We run a home lab ourselves!
 
-## Now Decide _How_ to host Zcash.
+## Decide _How_ to host Zcash.
 
 Docker (noun): a person who loads and unloads shipping containers at a marine dock
 Docker (noun): a small town in England
@@ -55,6 +65,7 @@ The major public clouds have Kubernetes platforms which offer many cool features
 
 A great thing about Kubernetes is that you don't have to run it on a major cloud, you can run it yourself, even on one computer. You lose the benefits of a large company's reliability, but you gain independence. 
 
+# Lightwallets, Servers, Action!
 ## Action Item 1: Pick a Hosting Provider
 
 Google Cloud offers $300 in free credits, and is our recommendation for people looking for the least technical path forward.
@@ -73,9 +84,8 @@ Server Requirements:
 
 ## Action Item 2: Configure Your Server
 
-[Work in progress: This will be posted by Wednesday! Thank you for making it this far, say Hello in Chat!]
-
-Feel like racing ahead, comfortable with a terminal, and want to use the Docker method? [Here's the process.](https://github.com/zecrocks/zcash-stack/tree/main/docker)
+Want to use the Docker method? [Docker process.](https://github.com/zecrocks/zcash-stack/tree/main/docker)
+Want to use the Kubernetes method? [Kubernetes process.](https://github.com/zecrocks/zcash-stack/tree/main/charts)
 
 ## Action Item 3: Sync the Blockchain
 
@@ -108,7 +118,7 @@ If using a cloud provider like Google Clout or Vultr, they will supply an IP add
 
 ### Anonymous Traffic Routing
 
-!["Orges are like onion, they have layers." meme](images/shrek.jpg)
+!["Orges are like onion, they have layers." meme](images/Shrek.jpg)
 
 Shrek has layers like an onion. Onion browsers like [TOR](https://www.torproject.org/), route traffic through a series of servers. Like wading through Shrek's swamp, this removes any traces of the path from origin to destination. Like a game of telephone, the packets are passed from node to node, each time stripping off information from it's past. Unlike a game of telephone, the original message arrives encrypted and intact.
 
