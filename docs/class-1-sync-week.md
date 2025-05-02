@@ -90,4 +90,30 @@ Optional: Download a snapshot of the zcash blockchain (likely takes a few hours)
 
 ## Action Item 4: Connect your Server to a Lightwallet
 
-![Connecting your server to a Lightwallet](https://github.com/ReadyMouse/zcash-stack/blob/main/docs/images/node_to_lightwallet_ways.png)
+Let's talk about personal privacy and sheilding IP address. Now that we have a server running, we will want to connect it to the outside world but in such a way, that we aren't revealing information about ourselves. While older generation shipped massive books of phones numbers and address to every resident in the neighborhood; we don't want to broadcast our IP address and other personal information out to every resident of the internet. 
+
+Consider 3 options:
+- Cloud-provided static IP address
+- IP-obscuring Tunnels 
+- Anonymous Traffic Routing (currently unavailable)
+
+![Connecting your server to a Lightwallet](./zcash-stack/blob/main/docs/images/node_to_lightwallet_ways.png)
+
+### Cloud-provided static IP address
+
+If using a cloud provider like Google Clout or Vultr, they will supply an IP address (seperate from your home IP address) of which can be directly connected to a lightwallet. This provides protection, and is the simplest method. 
+
+### IP-Obscuring Tunnels
+[Cloudflare](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) and [Tailscale](https://tailscale.com/kb/1223/funnel) are both tunnels that lets you route traffic from the broader internet to a local server. These options would be good for those who are self-hosting or want additional protection on cloud-provided hosting services.
+
+### Anonymous Traffic Routing
+
+!["Orges are like onion, they have layers." meme](./zcash-stack/blob/main/docs/images/shrek.jpg)
+
+Shrek has layers like an onion. Onion browsers like [TOR](https://www.torproject.org/), route traffic through a series of servers. Like wading through Shrek's swamp, this removes any traces of the path from origin to destination. Like a game of telephone, the packets are passed from node to node, each time stripping off information from it's past. Unlike a game of telephone, the original message arrives encrypted and intact.
+
+
+Note: Currently no publicaly available lightwallets support TOR/onion addresses.
+
+
+
