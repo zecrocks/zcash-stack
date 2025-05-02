@@ -90,4 +90,4 @@ Optional: Download a snapshot of the zcash blockchain (likely takes a few hours)
 
 ## Action Item 4: Connect your Server to a Lightwallet
 
-![Connecting your server to a Lightwallet](/images/node_to_lightwallet_ways.png)
+![Connecting your server to a Lightwallet](./docs/images/node_to_lightwallet_ways.png)
