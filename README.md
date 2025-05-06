@@ -14,11 +14,10 @@ The workshop documentation is organized into three main classes:
 
 ## Docker Resources
 
-The `docker/` directory contains Docker configurations and resources for running Zcash services in containers. This includes:
+The `docker/` directory contains Docker configurations and resources for running Zcash services in containers:
 
-- Docker Compose configurations
-- Dockerfile definitions
-- Container orchestration templates
+- [Docker README](docker/README.md) – Full documentation for Docker usage in this repo
+
 
 ## Kubernetes Deployment
 
