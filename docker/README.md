@@ -29,7 +29,7 @@ The blockchain will be synced into the ```data``` directory, which can be useful
 
 It will take several days to sync depending on the speed of your computer and internet connection.
 
-### Spedy Process
+### Speedy Process
 In a hurry? We host a snapshot of the blockchain that you can download faster than synchronizing it from scratch. It's not the purest way to synchronize, but it can save you over a week - especially if you are on a slow device.
 
 ```

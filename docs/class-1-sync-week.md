@@ -1,18 +1,36 @@
-# Welcome to Sync Week!
+# Welcome to the Zcash Node Workshop: Sync Week!
 ##  _What_ does it mean to host Zcash.
 
 A validator node for Zcash verifys and relays transactions, while maintaining a full copy of the blockchain ledger, and contributing to the consensus process that secures the network. Validator nodes independently check the validity of new blocks and transactions according to the protocol rules, help propagate data to other nodes, and ensure the integrity and decentralization of the blockchain. This typically requires reliable hardware, sufficient storage and bandwidth, and a secure, always-on internet connection.
 
 [TODO: Insert a relevant diagram/picture]
 
-## TLDR
+[TODO: where does Zcash sit in the world of privacy-realted cryptocurrency]
+
+## Workshop TLDR
     1. Set up a VM on hardware of choice 
-    2. Clone the git repo (https://github.com/zecrocks/zcash-stack) 
+    2. Launch the containers via Docker or Kubernetes on your VM
+        ◦ Clone the git repo (https://github.com/zecrocks/zcash-stack) 
         ◦ Or our competitors (https://github.com/stakeholdrs/zcash-infra)
     3. Sync the blockchain (from scratch in ~10days or from download-snapshot.sh in ~10hours)
-    4. Launch the containers via Docker or Kubernetes on your VM
-    5. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
-    6. Sit back and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
+    4. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
+    5. Sit back and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
+
+This week covers #1 -> #3. 
+
+<!-- Table of Contents -->
+## Table of Contents
+- [Decide Where to host Zcash](#decide-where-to-host-zcash)
+  - [External Hosting](#external-hosting)
+  - [Self-hosting Zcash](#self-hosting-zcash)
+- [Decide How to host Zcash](#decide-how-to-host-zcash)
+  - [Docker](#docker)
+  - [Kubernetes](#kubernetes)
+- [Lightwallets, Servers, Action!](#lightwallets-servers-action)
+  - [Action Item 1: Pick a Hosting Provider](#action-item-1-pick-a-hosting-provider)
+  - [Action Item 2: Configure Your Server](#action-item-2-configure-your-server)
+  - [Action Item 3: Sync the Blockchain](#action-item-3-sync-the-blockchain)
+
 
 ## Decide _Where_ to host Zcash.
 Servers are special computers made with high-quality components to help them function for long periods of time with no downtime.
@@ -73,7 +91,7 @@ Google Cloud offers $300 in free credits, and is our recommendation for people l
 
 [Vultr](https://www.vultr.com/) is another option for hosting services.
 
-Feeling adventurous? Browse ServerHunter.com for options. But contact us before paying for one, we'll help you make sure that you are picking a good option.
+Feeling adventurous? Browse [ServerHunter.com](https://www.ServerHunter.com) for options. But contact us before paying for one, we'll help you make sure that you are picking a good option.
 
 Remember, Zcash is decentralized software! You can completely delete it and start over fresh as many times as you like. You will not cause harm to the blockchain, it is synchronized across many computers around the world.
 
@@ -85,8 +103,8 @@ Server Requirements:
 
 ## Action Item 2: Configure Your Server
 
-Want to use the Docker method? [Docker process.](https://github.com/zecrocks/zcash-stack/tree/main/docker)
-Want to use the Kubernetes method? [Kubernetes process.](https://github.com/zecrocks/zcash-stack/tree/main/charts)
+- Want to use the Docker method? [Docker process.](../docker/README.md)
+- Want to use the Kubernetes method? [Kubernetes process.](../charts/zcash-stack/README.md)
 
 ## Action Item 3: Sync the Blockchain
 
@@ -98,37 +116,4 @@ Optional: Download a snapshot of the zcash blockchain (likely takes a few hours)
 ```
 ./docker/download-snapshot.sh
 ```
-
-## Action Item 4: Connect your Server to a Lightwallet
-
-Let's talk about personal privacy and sheilding IP address. Now that we have a server running, we will want to connect it to the outside world but in such a way, that we aren't revealing information about ourselves. While older generation shipped massive books of phones numbers and address to every resident in the neighborhood; we don't want to broadcast our IP address and other personal information out to every resident of the internet. 
-
-Consider 3 options:
-- Cloud-provided static IP address
-- IP-obscuring Tunnels 
-- Anonymous Traffic Routing (currently unavailable)
-
-![Connecting your server to a Lightwallet](images/node_to_lightwallet_ways.png)
-
-### Cloud-provided static IP address
-
-If using a cloud provider like Google Clout or Vultr, they will supply an IP address (seperate from your home IP address) of which can be directly connected to a lightwallet. This provides protection, and is the simplest method. 
-
-### IP-Obscuring Tunnels
-[Cloudflare](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) and [Tailscale](https://tailscale.com/kb/1223/funnel) are both tunnels that lets you route traffic from the broader internet to a local server. These options would be good for those who are self-hosting or want additional protection on cloud-provided hosting services.
-
-### Anonymous Traffic Routing
-
-!["Orges are like onion, they have layers." meme](images/Shrek.jpg)
-
-Shrek has layers like an onion. Onion browsers like [TOR](https://www.torproject.org/), route traffic through a series of servers. Like wading through Shrek's swamp, this removes any traces of the path from origin to destination. Like a game of telephone, the packets are passed from node to node, each time stripping off information from it's past. Unlike a game of telephone, the original message arrives encrypted and intact.
-
-
-Note: Currently no publicaly available lightwallets support TOR/onion addresses.
-
-## Action Item 5: Monitoring
-
-Occasionally check if your server is running using zecrock tools: [hosh Monitoring Tool](https://hosh.zec.rocks/zec)
-
-Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
 
