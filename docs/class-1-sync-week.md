@@ -5,7 +5,7 @@ A validator node for Zcash verifys and relays transactions, while maintaining a 
 
 [TODO: Insert a relevant diagram/picture]
 
-[TODO: where does Zcash sit in the world of privacy-realted cryptocurrency]
+[TODO: where does Zcash sit in the world of privacy-related cryptocurrency]
 
 ## Workshop TLDR
     1. Set up a VM on hardware of choice 
