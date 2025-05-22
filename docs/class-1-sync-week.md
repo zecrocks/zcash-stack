@@ -3,9 +3,8 @@
 
 A validator node for Zcash verifys and relays transactions, while maintaining a full copy of the blockchain ledger, and contributing to the consensus process that secures the network. Validator nodes independently check the validity of new blocks and transactions according to the protocol rules, help propagate data to other nodes, and ensure the integrity and decentralization of the blockchain. This typically requires reliable hardware, sufficient storage and bandwidth, and a secure, always-on internet connection.
 
-[TODO: Insert a relevant diagram/picture]
-
-[TODO: where does Zcash sit in the world of privacy-related cryptocurrency]
+This workshop is for setting up a full (non-mining) node. 
+![Different Types of Nodes](images/node_differences.png)
 
 ## Workshop TLDR
     1. Set up a VM on hardware of choice 
