@@ -76,8 +76,8 @@ lightwalletd:
   donationAddress:
   image:
     repository: electriccoinco/lightwalletd
-    tag: v0.4.17
-    hash: 906942c30d84a017e76ce72c4d59787aa5208b87a4af1b724e700f8524ab4fd1
+    tag: v0.4.18
+    hash: 0267fabc66c9b62ee0b5143a47e8c2c0969c1b759a990cba44d00a92089be07d
     pullPolicy: IfNotPresent
   replicas: 1
   initSnapshot:
