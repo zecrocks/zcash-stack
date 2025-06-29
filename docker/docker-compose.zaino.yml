@@ -9,12 +9,10 @@ services:
     env_file:
       - .env
     volumes:
-      - ./data/zebrad-cache:/var/cache/zebrad-cache
+      - zebra-data:/var/cache/zebrad-cache
     configs:
       - source: zebra_config
         target: /etc/zebrad/zebrad.toml
-        uid: '2001'
-        gid: '2001'
         mode: 0440
     ports:
       - "8233:8233" # Mainnet Network (for peer connections)
@@ -30,7 +28,7 @@ services:
     image: busybox:latest
     command: sh -c "mkdir -p /home/zaino/.cache/zaino && chown -R 2003:2003 /home/zaino"
     volumes:
-      - ./data/zaino-cache:/home/zaino/.cache/zaino
+      - zaino-data:/home/zaino/.cache/zaino
     user: "root"
 
   zaino:
@@ -46,7 +44,7 @@ services:
       - "8137:8137"
     volumes:
       - ./configs/zaino.toml:/etc/zaino/zaino.toml:ro
-      - ./data/zaino-cache:/home/zaino/.cache/zaino
+      - zaino-data:/home/zaino/.cache/zaino
     user: "2003:2003"
     restart: unless-stopped
 
@@ -54,4 +52,10 @@ configs:
   zebra_config:
     file: ./configs/zebrad.toml
   zaino_config:
-    file: ./configs/zaino.toml 
+    file: ./configs/zaino.toml
+
+volumes:
+  zebra-data:
+    driver: local
+  zaino-data:
+    driver: local 

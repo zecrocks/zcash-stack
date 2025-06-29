@@ -76,6 +76,8 @@ Zec.rocks runs on dedicated servers that we maintain around the world, running Z
 ### Docker
 Docker is a tool that packages apps and everything they need (code, dependencies, system tools) into standardized containers, so they run the same anywhere. It's like a shipping container for software: keeping it isolated, portable, and easy to run on any computer.
 
+![Docker Block Diagram](images/block_diagram.png)
+
 ### Kubernetes
 Kubernetes is a system that runs lots of containers across multiple computers and makes sure that the software stays online, even if some of the computers stop working. It can even grow and shrink automatically throughout the day. If more people need the software, it adds more computers and containers; if fewer people use it, it removes the extras to save money.
 

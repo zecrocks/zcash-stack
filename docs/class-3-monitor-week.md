@@ -9,7 +9,7 @@
     4. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
     5. Sit back and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
 
-    6. (!) Split your redbull all over the keyboard, get your feet off the desk, and stare open-mouthed at the screen...the servers are going down!
+    6. (!) Spit your redbull all over the keyboard, get your feet off the desk, and stare open-mouthed at the screen...the servers are going down!
 
 This week covers #6.
 
@@ -21,7 +21,27 @@ This week covers #6.
 
 ## Ongoing Monitoring and Tools
 
-[TODO: Insert discussion about ongoing support of the server, tools, and reliability.]
+Monitoring your Zcash node is crucial for ensuring its reliability and performance. Here are several approaches to monitor your node:
+
+### 1. Built-in Health Checks
+- **Docker Health Checks**: The stack includes built-in health checks that monitor:
+  - RPC endpoint availability (port 8232 for mainnet, 18232 for testnet)
+  - Node synchronization status
+  - Memory and CPU usage
+  - Container status
+
+### 2. Manual Monitoring Commands [untested]
+You can manually check your node's status using these commands:
+```bash
+# Check node status
+curl --data-binary '{"id":"curltest", "method": "getinfo"}' -H 'content-type: application/json' 127.0.0.1:8232
+
+# Check blockchain info
+curl --data-binary '{"id":"curltest", "method": "getblockchaininfo"}' -H 'content-type: application/json' 127.0.0.1:8232
+
+# Check peer connections
+curl --data-binary '{"id":"curltest", "method": "getpeerinfo"}' -H 'content-type: application/json' 127.0.0.1:8232
+```
 
 ## zecping Tool
 
@@ -33,6 +53,5 @@ Occasionally check if your server is running using zecrock tools: [hosh Monitori
 
 Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
 
-## fathomX Tool
-
-[TODO: Insert discussion, links, and some small adveristing about this tool]
+## Cool Tools in the ZEC ecosystem 
+[What services accept ZEC as payment?](https://www.paywithz.cash/)
