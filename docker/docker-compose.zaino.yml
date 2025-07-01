@@ -2,8 +2,12 @@ version: '3.8'
 
 services:
   init-zebra-env:
-    image: busybox:latest
-    command: sh -c "mkdir -p /var/cache/zebrad-cache/state/v26/mainnet && chown -R 10001:10001 /var/cache/zebrad-cache"
+    image: zfnd/zebra:latest
+    command: >
+      sh -c "
+        mkdir -p /var/cache/zebrad-cache/state/v26/mainnet &&
+        chown -R 10001:10001 /var/cache/zebrad-cache
+      "
     volumes:
       - zebra-data:/var/cache/zebrad-cache
     user: "root"
@@ -11,6 +15,7 @@ services:
   zebra:
     image: zfnd/zebra:latest
     restart: unless-stopped
+
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     env_file:
@@ -30,11 +35,12 @@ services:
       init-zebra-env:
         condition: service_completed_successfully
     healthcheck:
-      start_period: 1m
-      interval: 15s
+      start_period: 2m
+      interval: 30s
       timeout: 10s
       retries: 3
       test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+
 
   init-zaino-perms:
     image: busybox:latest
