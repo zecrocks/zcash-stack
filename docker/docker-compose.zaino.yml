@@ -3,7 +3,7 @@ version: '3.8'
 services:
   init-zebra-env:
     image: busybox:latest
-    command: sh -c "mkdir -p /var/cache/zebrad-cache/state/v26/mainnet && chown -R 2001:2001 /var/cache/zebrad-cache"
+    command: sh -c "mkdir -p /var/cache/zebrad-cache/state/v26/mainnet && chown -R 10001:10001 /var/cache/zebrad-cache"
     volumes:
       - zebra-data:/var/cache/zebrad-cache
     user: "root"
@@ -20,8 +20,8 @@ services:
     configs:
       - source: zebra_config
         target: /etc/zebrad/zebrad.toml
-        uid: '2001'
-        gid: '2001'
+        uid: '10001'
+        gid: '10001'
         mode: 0440
     ports:
       - "8233:8233" # Mainnet Network (for peer connections)
