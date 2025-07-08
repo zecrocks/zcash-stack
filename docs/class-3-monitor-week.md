@@ -33,14 +33,7 @@ Monitoring your Zcash node is crucial for ensuring its reliability and performan
 ### 2. Manual Monitoring Commands [untested]
 You can manually check your node's status using these commands:
 ```bash
-# Check node status
-curl --data-binary '{"id":"curltest", "method": "getinfo"}' -H 'content-type: application/json' 127.0.0.1:8232
-
-# Check blockchain info
-curl --data-binary '{"id":"curltest", "method": "getblockchaininfo"}' -H 'content-type: application/json' 127.0.0.1:8232
-
-# Check peer connections
-curl --data-binary '{"id":"curltest", "method": "getpeerinfo"}' -H 'content-type: application/json' 127.0.0.1:8232
+docker compose -f docker-compose.zaino.yml ps -a
 ```
 
 ## zecping Tool
@@ -51,7 +44,7 @@ curl --data-binary '{"id":"curltest", "method": "getpeerinfo"}' -H 'content-type
 
 Occasionally check if your server is running using zecrock tools: [hosh Monitoring Tool](https://hosh.zec.rocks/zec)
 
-Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
+Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a Celsius knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
 
 ## Cool Tools in the ZEC ecosystem 
 [What services accept ZEC as payment?](https://www.paywithz.cash/)

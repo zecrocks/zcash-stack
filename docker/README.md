@@ -23,6 +23,43 @@ docker compose up
 docker compose -f docker-compose.zaino.yml up
 ```
 
+## Troubleshooting and Docker Down
+- Stop and remove all containers, networks, and volumes for this project
+```
+docker compose -f docker-compose.zaino.yml down -v --remove-orphans
+```
+
+- Remove all unused containers, networks, images, and volumes
+```
+docker system prune -a --volumes -f
+```
+
+- Remove any remaining volumes specifically
+```
+docker volume prune -f
+```
+
+- Remove any remaining networks
+```
+docker network prune -f
+```
+
+- Restart Docker daemon (optional but can help with network issues)
+```
+systemctl restart docker
+```
+
+- Docker composer down
+```
+docker compose -f docker-compose.zaino.yml down
+```
+
+- All together now!
+```
+docker compose -f docker-compose.zaino.yml down -v --remove-orphans && docker system prune -a --volumes -f && docker volume prune -f && docker network prune -f
+```
+
+
 ## Sync the Blockchain
 ### Lengthy Process
 The blockchain will be synced into the ```data``` directory, which can be useful for copying it to other devices.
