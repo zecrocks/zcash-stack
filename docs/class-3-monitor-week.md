@@ -14,37 +14,39 @@
 This week covers #6.
 
 ## Table of Contents
-- [Ongoing Monitoring and Tools](#ongoing-monitoring-and-tools)
-- [zecping Tool](#zecping-tool)
+- [Manual Monitoring](#ongoing-monitoring-and-tools)
 - [hosh Monitoring Tool](#hosh-monitoring-tool)
-- [fathomX Tool](#fathomx-tool)
 
 ## Ongoing Monitoring and Tools
-
-Monitoring your Zcash node is crucial for ensuring its reliability and performance. Here are several approaches to monitor your node:
-
-### 1. Built-in Health Checks
-- **Docker Health Checks**: The stack includes built-in health checks that monitor:
-  - RPC endpoint availability (port 8232 for mainnet, 18232 for testnet)
-  - Node synchronization status
-  - Memory and CPU usage
-  - Container status
-
-### 2. Manual Monitoring Commands [untested]
 You can manually check your node's status using these commands:
 ```bash
 docker compose -f docker-compose.zaino.yml ps -a
 ```
+It might look something like this: 
+```
+NAME                        IMAGE                              COMMAND                  SERVICE            CREATED        STATUS                    PORTS
+docker-init-zaino-perms-1   busybox:latest                     "sh -c 'mkdir -p /ho…"   init-zaino-perms   23 hours ago   Exited (0) 15 hours ago   
+docker-zebra-1              zfnd/zebra:latest                  "entrypoint.sh zebrad"   zebra              23 hours ago   Up 15 hours (healthy)    0.0.0.0:8232-8233->8232-8233/tcp, [::]:8232-8233->8232-8233/tcp
+zaino                       emersonian/zcash-zaino:0.1.2-zr4   "/app/zainod --confi…"   zaino              23 hours ago   Up 15 hours               8137/tcp
+```
+Logs will be here:
+```
+# Check container status
+docker compose -f docker/docker-compose.zaino.yml ps -a
 
-## zecping Tool
+# Check Zebra logs
+docker compose -f docker/docker-compose.zaino.yml logs zebra --tail=20
 
-[TODO: Insert discussion on this tool]
+# Check Zaino logs  
+docker compose -f docker/docker-compose.zaino.yml logs zaino --tail=20
+
+# Monitor real-time logs
+docker compose -f docker/docker-compose.zaino.yml logs -f
+```
 
 ## hosh Monitoring Tool
 
 Occasionally check if your server is running using zecrock tools: [hosh Monitoring Tool](https://hosh.zec.rocks/zec)
 
+## Good night friend
 Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a Celsius knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
-
-## Cool Tools in the ZEC ecosystem 
-[What services accept ZEC as payment?](https://www.paywithz.cash/)

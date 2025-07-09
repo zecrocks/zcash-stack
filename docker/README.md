@@ -23,6 +23,11 @@ docker compose up
 docker compose -f docker-compose.zaino.yml up
 ```
 
+To run deattached in the background even if ssh connection drops: 
+```
+docker compose -f docker-compose.zaino.yml up --detach
+```
+
 ## Troubleshooting and Docker Down
 - Stop and remove all containers, networks, and volumes for this project
 ```

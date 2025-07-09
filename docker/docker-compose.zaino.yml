@@ -39,7 +39,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      test: ["CMD", "sh", "-c", "netstat -an | grep :8232 || exit 1"]
+      test: ["CMD", "sh", "-c", "cat /proc/net/tcp | grep :2028 || exit 1"]
 
 
   init-zaino-perms:
