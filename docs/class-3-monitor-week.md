@@ -1,17 +1,19 @@
 # Welcome to the Zcash Node Workshop: Monitor Week!
 
 ## Workshop TLDR
-    1. Set up a VM on hardware of choice 
-    2. Launch the containers via Docker or Kubernetes on your VM
-        ◦ Clone the git repo (https://github.com/zecrocks/zcash-stack) 
-        ◦ Or our competitors (https://github.com/stakeholdrs/zcash-infra)
-    3. Sync the blockchain (from scratch in ~10days or from download-snapshot.sh in ~10hours)
-    4. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
-    5. Sit back and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
+1. Set up a VM on hardware of choice
+1. Launch the containers via Docker or Kubernetes on your VM
+    - Clone the git repo (https://github.com/zecrocks/zcash-stack)
+    - Or our competitors (https://github.com/stakeholdrs/zcash-infra)
+1. Sync the blockchain (from scratch in ~10 days or from download-snapshot.sh in ~10 hours)
+1. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
+1. Sit back and sip a Red Bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
 
-    6. (!) Spit your redbull all over the keyboard, get your feet off the desk, and stare open-mouthed at the screen...the servers are going down!
+** Record scratch **
 
-This week covers #6.
+6. (!) Spit your Red Bull all over the keyboard, get your feet off the desk, and stare open-mouthed at the screen...the servers are going down!
+
+![Confused](images/shrek_confused.jpg)
 
 ## Table of Contents
 - [Manual Monitoring](#ongoing-monitoring-and-tools)
@@ -50,3 +52,10 @@ Occasionally check if your server is running using zecrock tools: [hosh Monitori
 
 ## Good night friend
 Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a Celsius knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
+
+We love fellow tech educators: Consider supporting Tech Learning Collective's (TLC) Mission to provide cybersecurity and crypto literacy to at-risk minorities, and vulnerable communities whose livelihoods depend on privacy. TLC educates those whose very ability to transact in the world is threatened as a result of their identity, legal status, or occupation.
+
+[Tech Learning Collective](https://techlearningcollective.com/workshops/Two-Sides-of-the-Same-Coin-Transacting-Privately-with-Cryptocurrency)
+
+TLC: 
+[TODO: Insert sheilded address]

@@ -7,13 +7,13 @@ This workshop is for setting up a full (non-mining) node.
 ![Different Types of Nodes](images/node_differences.png)
 
 ## Workshop TLDR
-    1. Set up a VM on hardware of choice 
-    2. Launch the containers via Docker or Kubernetes on your VM
-        ◦ Clone the git repo (https://github.com/zecrocks/zcash-stack) 
-        ◦ Or our competitors (https://github.com/stakeholdrs/zcash-infra)
-    3. Sync the blockchain (from scratch in ~10days or from download-snapshot.sh in ~10hours)
-    4. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
-    5. Sit back and sip a red-bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
+1. Set up a VM on hardware of choice
+1. Launch the containers via Docker or Kubernetes on your VM
+    - Clone the git repo (https://github.com/zecrocks/zcash-stack)
+    - Or our competitors (https://github.com/stakeholdrs/zcash-infra)
+1. Sync the blockchain (from scratch in ~10 days or from download-snapshot.sh in ~10 hours)
+1. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
+1. Sit back and sip a Red Bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
 
 This week covers #1 -> #3. 
 
@@ -63,7 +63,6 @@ If you're comfortable with the risks, go for it! We're happy to help and will re
 Docker vs. Kubernetes: A Showdown
 
 - Docker (noun): a person who loads and unloads shipping containers at a marine dock
-- Docker (noun): a small town in England
 - [Docker](https://www.docker.com/) (noun): an open-source software project automating the deployment of applications inside software containers 
 
 vs
