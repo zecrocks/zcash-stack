@@ -3,6 +3,8 @@ version: '3.8'
 services:
   init-zebra-env:
     image: zfnd/zebra:latest
+    user: "root"
+    entrypoint: [] # Overriding entrypoint to permit root operation.
     command: >
       sh -c "
         mkdir -p /var/cache/zebrad-cache/state/v26/mainnet &&
@@ -10,7 +12,6 @@ services:
       "
     volumes:
       - zebra-data:/var/cache/zebrad-cache
-    user: "root"
 
   zebra:
     image: zfnd/zebra:latest
@@ -54,14 +55,12 @@ services:
     container_name: zaino
     command: ["--config", "/etc/zaino/zaino.toml"]
     ports:
-      - "0.0.0.0:8137:8137" # GRPC port for lightwallet client connections.
+      - "8137:8137" # GRPC port for lightwallet client connections.
     depends_on:
       init-zaino-perms:
         condition: service_completed_successfully
       zebra:
         condition: service_started
-    ports:
-      - "8137:8137"
     volumes:
       - ./configs/zaino.toml:/etc/zaino/zaino.toml:ro
       - zaino-data:/var/cache/zaino-cache
