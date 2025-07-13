@@ -2,34 +2,41 @@
 
 # Zcash Stack
 
-This repository contains tools and documentation for deploying and managing Zcash infrastructure using Docker and Kubernetes.
+This repository contains tools and [documentation in the form of a workshop](./docs/) for deploying and managing Zcash infrastructure using Docker and Kubernetes.
 
-## Workshop Notes
+## Repository layout
 
-The workshop documentation is organized into three main classes:
+This repository has a simple filesystem structure. Important directories are noted and described in more detail below.
 
-- [Class 1: Sync Week](docs/class-1-sync-week.md) - Learn how to set up and sync a Zcash node
-- [Class 2: Connect Week](docs/class-2-connect-week.md) - Connect your node to the Zcash network
-- [Class 3: Monitor Week](docs/class-3-monitor-week.md) - Monitor and maintain your Zcash infrastructure
+```
+.
+├── LICENSE            # <-- Legal information.
+├── README.md          # <-- This file.
+├── charts             # <-- Kubernetes resources (Helm charts).
+├── docker             # <-- Docker resources (Compose configurations.).
+├── docs               # <-- Workshop lessons and documentation.
+├── examples           # <-- TODO: TK write description.
+└── install-traefik.sh
+```
+
+## `docs`: Workshop notes
+
+The [`docs/` directory](./docs/) contains workshop documentation which serves the dual purpose of describing the infrastructure configurations and providing a step-by-step walk through in using the provided infrastructure configurations.
 
 ## Docker Resources
 
-The `docker/` directory contains Docker configurations and resources for running Zcash services in containers:
-
-- [Docker README](docker/README.md) – Full documentation for Docker usage in this repo
-
+The [`docker/` directory](./docker/) contains Docker configurations and resources for running Zcash services in containers:
 
 ## Kubernetes Deployment
 
-The `charts/` directory contains Helm charts for deploying Zcash infrastructure on Kubernetes:
+The [`charts/` directory](./charts/) contains Helm charts for deploying Zcash infrastructure on Kubernetes:
 
 - [Zcash Stack Chart](charts/zcash-stack/README.md) - A comprehensive Helm chart for deploying Zcash infrastructure on Kubernetes
 
 ## Examples
 
-The `examples/` directory contains example configurations and deployment scenarios to help you get started.
+The [`examples/` directory](./examples/) contains example configurations and deployment scenarios to help you get started.
 
 ## License
 
-This project is licensed under the terms of the license included in the repository.
-
+This project is licensed under the terms of the [license](./LICENSE) included in the repository.
