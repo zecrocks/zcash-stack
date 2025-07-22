@@ -1,22 +1,28 @@
 # Welcome to the Zcash Node Workshop: Connect Week!
 
-## Workshop TLDR
-1. Set up a VM on hardware of choice
-1. Launch the containers via Docker or Kubernetes on your VM
-    - Clone the git repo (https://github.com/zecrocks/zcash-stack)
-    - Or our competitors (https://github.com/stakeholdrs/zcash-infra)
-1. Sync the blockchain (from scratch in ~10 days or from download-snapshot.sh in ~10 hours)
-1. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
-1. Sit back and sip a Red Bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
+This continues our dicussion of hosting a zcash full node. If you are just starting here, perhaps you missed the [workshop overview](./README.md). 
 
-This week covers #4 + #5.
+## Workshop TLDR
+1. [Sync](./class-1-sync.md) - Initial set up:
+    1. Set up a virtual machine (VM) on hardware of your choice.
+    1. Launch the Zcash service containers via Docker or Kubernetes on your VM.
+        - Clone our [workshop Git repository](https://github.com/zecrocks/zcash-stack).
+        - Or [our friendly-competitor's repository](https://github.com/stakeholdrs/zcash-infra).
+    1. Synchronize your node with the Zcash network's blockchain (from scratch in ~10 days or from [`download-snapshot.sh`](../docker/download-snapshot.sh) in ~10 hours).
+1. **Connect** - Connect your node to the Zcash network.
+    - Optionally, use one of several technologies to improve the privacy that you, as a node operator, have for running your node and to connecting clients.
+1. [Observe](./class-3-observe.md) - Observe, monitor, and maintain your Zcash infrastructure to ensure your node remains reliably available as part of the network.
+
+This document covers Connect.
 
 ## Table of Contents
-- [Action Item 4: Connect your Server to a Lightwallet](#action-item-4-connect-your-server-to-a-lightwallet)
-  - [Public Operation](#public-operation-cloud-provided-static-ip-address)
-  - [IP-Obscured Operation](#ip-obscured-operation)
-  - [Anonymous Traffic Routing](#anonymous-traffic-routing)
-- [Action Item 5: Relax](#relax)
+- [Connecting your Server to the World Wide Web3](#connecting-your-server-to-the-world-wide-web3)
+  - [1. Public operation (cloud-provided static IP address)](#1-public-operation-cloud-provided-static-ip-address)
+  - [2. IP-Obscured Operation](#2-ip-obscured-operation)
+  - [3. Anonymous Traffic Routing](#3-anonymous-traffic-routing)
+- [Lightwallet Node Discovery](#lightwallet-node-discovery)
+- [Example: Connecting to Zashi + Test Transcation](#example-connecting-to-zashi--test-transcation)
+- [Relax](#relax)
 
 ## Connecting your Server to the World Wide Web3
 
@@ -99,5 +105,5 @@ TLC:
 
 If you leave a way to contact you in the encrypted message field, and we'll acknowledge the transcation with a big thanks!
 
-## Action Item 5: Relax
+## Relax
 ![relax](images/relax.png)

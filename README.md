@@ -15,13 +15,13 @@ This repository has a simple filesystem structure. Important directories are not
 ├── charts             # <-- Kubernetes resources (Helm charts).
 ├── docker             # <-- Docker resources (Compose configurations.).
 ├── docs               # <-- Workshop lessons and documentation.
-├── examples           # <-- TODO: TK write description.
+├── examples           # <-- Example Kubernetes deployment configurations.
 └── install-traefik.sh
 ```
 
 ## `docs`: Workshop notes
 
-The [`docs/` directory](./docs/) contains workshop documentation which serves the dual purpose of describing the infrastructure configurations and providing a step-by-step walk through in using the provided infrastructure configurations.
+The [`docs/` directory](./docs/) contains workshop documentation which serves the dual purpose of describing the infrastructure configurations and providing a step-by-step walk through using the provided infrastructure configurations.
 
 ## Docker Resources
 

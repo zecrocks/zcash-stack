@@ -1,25 +1,29 @@
 # Welcome to the Zcash Node Workshop: Monitor Week!
 
+This continues our dicussion of hosting a zcash full node. If you are just starting here, perhaps you missed the [workshop overview](./README.md). 
+
 ## Workshop TLDR
-1. Set up a VM on hardware of choice
-1. Launch the containers via Docker or Kubernetes on your VM
-    - Clone the git repo (https://github.com/zecrocks/zcash-stack)
-    - Or our competitors (https://github.com/stakeholdrs/zcash-infra)
-1. Sync the blockchain (from scratch in ~10 days or from download-snapshot.sh in ~10 hours)
-1. Connect your new node to a wallet (perhaps using Cloudflare or Tailscale tunnel)
-1. Sit back and sip a Red Bull knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem
+1. [Sync](./class-1-sync.md) - Initial set up:
+    1. Set up a virtual machine (VM) on hardware of your choice.
+    1. Launch the Zcash service containers via Docker or Kubernetes on your VM.
+        - Clone our [workshop Git repository](https://github.com/zecrocks/zcash-stack).
+        - Or [our friendly-competitor's repository](https://github.com/stakeholdrs/zcash-infra).
+    1. Synchronize your node with the Zcash network's blockchain (from scratch in ~10 days or from [`download-snapshot.sh`](../docker/download-snapshot.sh) in ~10 hours).
+1. [Connect](./class-2-connect.md) - Connect your node to the Zcash network.
+    - Optionally, use one of several technologies to improve the privacy that you, as a node operator, have for running your node and to connecting clients.
+1. **Observe** - Observe, monitor, and maintain your Zcash infrastructure to ensure your node remains reliably available as part of the network.
 
 ** Record scratch **
 
-6. (!) Spit your Red Bull all over the keyboard, get your feet off the desk, and stare open-mouthed at the screen...the servers are going down!
+(!) Spit your Red Bull all over the keyboard, get your feet off the desk, and stare open-mouthed at the screen...the servers are going down!
 
 ![Confused](images/shrek_confused.jpg)
 
 ## Table of Contents
-- [Manual Monitoring](#ongoing-monitoring-and-tools)
+- [Manual Monitoring](#manual-monitoring)
 - [hosh Monitoring Tool](#hosh-monitoring-tool)
 
-## Ongoing Monitoring and Tools
+## Manual Monitoring
 You can manually check your node's status using these commands:
 ```bash
 docker compose -f docker-compose.zaino.yml ps -a
