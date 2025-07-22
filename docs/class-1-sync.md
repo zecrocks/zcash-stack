@@ -9,6 +9,19 @@ This begins our documentation of the Zcash infrastructure stack. Whether you are
 
 Please first review our ["before you begin"](./README.md#before-you-begin) section to ensure this workshop is appropriate for your skill level and intents. If they are, we hope you're as excited to help us expand and improve the Zcash ecosystem as we are to help you, because that's exactly what this workshop has you doing!
 
+## Workshop TLDR
+1. **Sync** - Initial set up:
+    1. Set up a virtual machine (VM) on hardware of your choice.
+    1. Launch the Zcash service containers via Docker or Kubernetes on your VM.
+        - Clone our [workshop Git repository](https://github.com/zecrocks/zcash-stack).
+        - Or [our friendly-competitor's repository](https://github.com/stakeholdrs/zcash-infra).
+    1. Synchronize your node with the Zcash network's blockchain (from scratch in ~10 days or from [`download-snapshot.sh`](../docker/download-snapshot.sh) in ~10 hours).
+1. [Connect](./class-2-connect.md) - Connect your node to the Zcash network.
+    - Optionally, use one of several technologies to improve the privacy that you, as a node operator, have for running your node and to connecting clients.
+1. [Observe](./class-3-observe.md) - Observe, monitor, and maintain your Zcash infrastructure to ensure your node remains reliably available as part of the network.
+
+This document covers Sync.
+
 ## Measure twice, cut once
 
 Let's discuss some basic considerations for running Zcash infrastructure. In this section, you'll:
