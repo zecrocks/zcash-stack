@@ -56,10 +56,3 @@ Occasionally check if your server is running using zecrock tools: [hosh Monitori
 
 ## Good night friend
 Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a Celsius knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
-
-We love fellow tech educators: Consider supporting Tech Learning Collective's (TLC) Mission to provide cybersecurity and crypto literacy to at-risk minorities, and vulnerable communities whose livelihoods depend on privacy. TLC educates those whose very ability to transact in the world is threatened as a result of their identity, legal status, or occupation.
-
-[Tech Learning Collective](https://techlearningcollective.com/workshops/Two-Sides-of-the-Same-Coin-Transacting-Privately-with-Cryptocurrency)
-
-TLC: 
-[TODO: Insert sheilded address]

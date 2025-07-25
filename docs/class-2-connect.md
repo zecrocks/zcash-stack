@@ -54,7 +54,7 @@ In many cases, system operators don't want to reveal who they are to everyone in
 
 This requires configuring your service to operate in an IP-obscured fashion, such that we aren't revealing certain information about ourselves. One helpful analogy may be to think of public operation similarly to how older generations shipped massive books of phone numbers and addresses to every resident in the neighborhood; we don't want to broadcast our IP address and other personal information out to every resident of the Internet.
 
-For this, you can make use of various IP-obscuring tunnel technologies. Two popular and effective ones are [Cloudflare](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) and [Tailscale](https://tailscale.com/kb/1223/funnel), which  both offer tunneling technology that let you route traffic from the broader internet to a local server while also providing some measure of IP address obfuscation to the broader world.
+For this, you can make use of various IP-obscuring tunnel technologies. [Tailscale](https://tailscale.com/kb/1223/funnel) offers tunneling technology that let you route traffic from the broader internet to a local server while also providing some measure of IP address obfuscation to the broader world.
 
 When you use an IP-obscured method for your own privacy, you should remove the direct/static method from your service so that only the more private avenue exists. You can also choose to add this more private method *in addition to* the less private one if you simply need different capabilities or are using these avenues for censorship circumvention rather than for privacy, per se.
 
@@ -66,7 +66,7 @@ zaino:
     - "0.0.0.0:8137:8137" # GRPC port for lightwallet client connections.
 ```
 
-[TODO: Add information on setting up cloudflare]
+[TODO: Add information on setting up tailscale]
 
 ## 3. Anonymous Traffic Routing
 
@@ -79,7 +79,7 @@ Shrek has layers like an onion. Onion browsers like [TOR](https://www.torproject
 
 ## Lightwallet Node Discovery
 
-[TODO: Insert discussion of how lightwallets find the IP addresses of new nodes?]
+Currently Zashi maintains a list of the domains/IP addresses of known nodes, and manually adds trusted sources. 
 
 ## Example: Connecting to Zashi + Test Transcation
 
@@ -93,15 +93,6 @@ Enter your new IP address into the custom server field and test a transcation!
 Send a tip to your favorite Zcash node workshop organizer. ;)  
 
 ReadyMouse: u14yr5fr2gzhedzrlmymtjp8jqsdryh6zpypnh8k2e2hq9z6jluz9hn9u088j02c3zphnf30he4pnm62ccyae6hfjjuqxlddhezw2te5p6xxhm68vvvpvynnzdcegq4c5u06slq673emarwjy5z0enj2ry53avx0nsmftpx4hhh5rhpgnc
-
-OR 
-
-Support Tech Learning Collective's (TLC) Mission to provide cybersecurity and crypto literacy to at-risk minorities, and vulnerable communities whose livelihoods depend on privacy. TLC educates those whose very ability to transact in the world is threatened as a result of their identity, legal status, or occupation.
-
-[Tech Learning Collective](https://techlearningcollective.com/workshops/Two-Sides-of-the-Same-Coin-Transacting-Privately-with-Cryptocurrency)
-
-TLC: 
-[TODO: Insert sheilded address]
 
 If you leave a way to contact you in the encrypted message field, and we'll acknowledge the transcation with a big thanks!
 
