@@ -9,8 +9,8 @@ zebra:
   testnet: false
   image:
     repository: zfnd/zebra
-    tag: v2.3.0
-    hash: 70835d84cc6dceeda160707a35c611b11e616acb3627c99862e92bb5f0789ab4
+    tag: v2.5.0
+    hash: c57e04a969b630fb5bddea77c4d1246552bb288c70a724d37dcb34f75a21456c
     pullPolicy: IfNotPresent
   replicas: 1
   initSnapshot:
