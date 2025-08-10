@@ -66,8 +66,6 @@ zaino:
     - "0.0.0.0:8137:8137" # GRPC port for lightwallet client connections.
 ```
 
-[TODO: Add information on setting up tailscale]
-
 ## 3. Anonymous Traffic Routing
 
 !["Ogres are like onions, they have layers." meme](images/Shrek.jpg)
