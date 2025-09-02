@@ -7,7 +7,7 @@ The [`docs` folder contains workshop documentation](./docs/) and is organized in
     1. Launch the Zcash service containers via Docker or Kubernetes on your VM.
         - Clone our [workshop Git repository](https://github.com/zecrocks/zcash-stack).
         - Or [our friendly-competitor's repository](https://github.com/stakeholdrs/zcash-infra).
-    1. Synchronize your node with the Zcash network's blockchain (from scratch in ~10 days or from [`download-snapshot.sh`](../docker/docwnload-snapshop.sh) in ~10 hours).
+    1. Synchronize your node with the Zcash network's blockchain (from scratch in ~10 days or from [`download-snapshot.sh`](../docker/download-snapshop.sh) in ~10 hours).
 1. [Connect](./class-2-connect.md) - Connect your node to the Zcash network.
     1. Optionally, use one of several technologies to improve the privacy that you, as a node operator, have for running your node and to connecting clients.
 1. [Observe](./class-3-observe.md) - Observe, monitor, and maintain your Zcash infrastructure to ensure your node remains reliably available as part of the network.
