@@ -26,7 +26,7 @@ This continues our dicussion of hosting a zcash full node. If you are just start
 ## Manual Monitoring
 You can manually check your node's status using these commands:
 ```bash
-docker compose -f docker-compose.zaino.yml ps -a
+docker compose -f docker-compose.yml ps -a
 ```
 It might look something like this: 
 ```
@@ -38,16 +38,16 @@ zaino                       emersonian/zcash-zaino:0.1.2-zr4   "/app/zainod --co
 Logs will be here:
 ```
 # Check container status
-docker compose -f docker/docker-compose.zaino.yml ps -a
+docker compose -f docker/docker-compose.yml ps -a
 
 # Check Zebra logs
-docker compose -f docker/docker-compose.zaino.yml logs zebra --tail=20
+docker compose -f docker/docker-compose.yml logs zebra --tail=20
 
-# Check Zaino logs  
-docker compose -f docker/docker-compose.zaino.yml logs zaino --tail=20
+# Check lightwalletd logs  
+docker compose -f docker/docker-compose.yml logs lightwalletd --tail=20
 
 # Monitor real-time logs
-docker compose -f docker/docker-compose.zaino.yml logs -f
+docker compose -f docker/docker-compose.yml logs -f
 ```
 
 ## hosh Monitoring Tool
