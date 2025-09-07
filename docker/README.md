@@ -25,16 +25,27 @@ Install Docker on your server/VM and check out this source code repository.
 ```
 git clone https://github.com/zecrocks/zcash-stack.git
 cd zcash-stack/docker
-docker compose -f docker-compose.zaino.yml up
+```
+
+Adding your donation address to the lighwalletd config:
+* in docker-compose.yml about line 53 you'll see: 
+```
+--donation-address==u14...
+```
+Change that to your unified sheilded address.
+Then bring up the docker container.
+
+```
+docker compose -f docker-compose.yml up
 ```
 
 To run deattached in the background even if ssh connection drops: 
 ```
-docker compose -f docker-compose.zaino.yml up --detach
+docker compose -f docker-compose.yml up --detach
 ```
 To stop the system, but with removing the volumes that get created. 
 ```
-docker compose -f docker-compose.zaino.yml down
+docker compose -f docker-compose.yml down
 ```
 
 ## Troubleshooting and Docker Down
@@ -42,7 +53,7 @@ As happens in life, there are often troubles and times when a clean start is des
 
 Stop and remove all containers, networks, and volumes for this project
 ```
-docker compose -f docker-compose.zaino.yml down -v --remove-orphans
+docker compose -f docker-compose.yml down -v --remove-orphans
 ```
 
 Remove all unused containers, networks, images, and volumes
@@ -67,7 +78,7 @@ systemctl restart docker
 
 All together now! Hard removal of everything.
 ```
-docker compose -f docker-compose.zaino.yml down -v --remove-orphans && docker system prune -a --volumes -f && docker volume prune -f && docker network prune -f
+docker compose -f docker-compose.yml down -v --remove-orphans && docker system prune -a --volumes -f && docker volume prune -f && docker network prune -f
 ```
 
 ## Sync the Blockchain
