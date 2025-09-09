@@ -1,6 +1,6 @@
 # Zcash Stack Documentation and Workshop
 
-The [`docs` folder contains workshop documentation](./docs/) and is organized into three main "classes" or stages of learning:
+The [`docs` folder contains workshop documentation](./) and is organized into three main "classes" or stages of learning:
 
 1. [Sync](./class-1-sync.md) - Initial set up:
     1. Set up a virtual machine (VM) on hardware of your choice.
