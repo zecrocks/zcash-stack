@@ -149,7 +149,7 @@ The Zcash blockchain is large (~350GB at the time of this writing), and growing 
 
 To speed this process up, another option is to download a snapshot of the blockchain as a starting point and then let the server validate each new subsequent transcation. Of course, this assumes that the snapshot maker has an accurate copy of the history of the blockchain, but don't worry. If an inaccurate or malicious snapshot is used, subsequent blocks won't validate correctly, and you'll be alerted. This process won't harm the rest of the network, either, although you will have to start over and download a different snapshot. Hopefully one that's accurate this time!
 
-If you'd like to do that, you can download a snapshot of the Zcash blockchain, which will likely take a few hours, by running [the `download-snapshot.sh` script we provde here](../docker/download-snapshot.sh).
+If you'd like to do that, you can download a snapshot of the Zcash blockchain, which will likely take a few hours, by [running the `download-snapshot.sh` script we provde here](../docker/README.md#speedy-process-download-a-snapshot).
 
 ## Next steps:
 
