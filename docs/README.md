@@ -1,5 +1,7 @@
 # Zcash Stack Documentation and Workshop
 
+Interested in running a Zcash light wallet server? That's great! Right now we are providing personal assistance in our [Workshops Forum](https://workshops.zec.rocks). [Come say hello!](https://workshops.zec.rocks/t/welcome-to-zec-rocks-workshops/5/8)
+
 The [`docs` folder contains workshop documentation](./) and is organized into three main "classes" or stages of learning:
 
 1. [Sync](./class-1-sync.md) - Initial set up:
