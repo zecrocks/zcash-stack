@@ -1,0 +1,88 @@
+version: "3.8"
+
+# Embedded Caddyfile configuration
+x-caddyfile: &CADDYFILE |
+  {
+    # Use Cloudflare DNS-01 globally for ACME
+    acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    auto_https disable_redirects
+  }
+
+  # Your domain on custom port 8443
+  {env.DOMAIN_NAME}:8443 {
+    encode zstd gzip
+
+    # gRPC (TLS at edge) -> upstream h2c over the reverse tunnel
+    reverse_proxy h2c://127.0.0.1:19067 {
+      transport http {
+        read_timeout 600s
+        write_timeout 600s
+      }
+      header_up Host {host}
+      header_up X-Forwarded-For {remote_host}
+    }
+
+    # Health check endpoint
+    route /healthz {
+      respond "ok" 200
+    }
+
+    tls {
+      dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+  }
+
+services:
+  # Write the Caddyfile to a volume
+  caddyfile-writer:
+    image: alpine:3.20
+    command: >
+      sh -lc 'mkdir -p /work &&
+              printf "%s" "$$CADDYFILE" > /work/Caddyfile &&
+              echo "Caddyfile written";'
+    environment:
+      CADDYFILE: *CADDYFILE
+    volumes:
+      - caddy_conf:/work
+    restart: "no"
+
+  caddy:
+    image: ghcr.io/caddybuilds/caddy-cloudflare:alpine
+    depends_on:
+      caddyfile-writer:
+        condition: service_completed_successfully
+    network_mode: host
+    ports:
+      - "8443:8443"
+    environment:
+      # Get this from Cloudflare -> My Profile -> API Tokens
+      # Needs Zone.DNS:Edit + Zone.Zone:Read permissions
+      CLOUDFLARE_API_TOKEN: "${CLOUDFLARE_API_TOKEN}"
+      DOMAIN_NAME: "${DOMAIN_NAME}"
+    volumes:
+      - caddy_conf:/etc/caddy
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:2019/config/ >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # Monitor tunnel connectivity
+  lwd-backend-probe:
+    image: alpine:3.20
+    command: >
+      sh -lc 'apk add --no-cache busybox-extras >/dev/null 2>&1 || true;
+              while true; do
+                nc -z 127.0.0.1 19067 && echo "tunnel: UP" || echo "tunnel: waiting...";
+                sleep 5;
+              done'
+    restart: unless-stopped
+
+volumes:
+  caddy_conf:
+  caddy_data:
+  caddy_config:
