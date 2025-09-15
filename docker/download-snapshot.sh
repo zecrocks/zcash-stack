@@ -3,7 +3,7 @@
 # Simple download script to speed up the process of downloading the
 # entire content of the Zcash blockchain.
 
-snapshot_url="https://link.storjshare.io/s/jx6hrssshp3rbpdmrxjiybjm3cnq/nodedumps/zec/zebra-2025-04-08.tar?download=1"
+snapshot_url="https://link.storjshare.io/s/jvwzyxteyqlmbfayt6jgmhaaus3a/nodedumps/zec/zebra-2025-09-12.tar?download=1"
 download_dir="./data/zebrad-cache"
 
 echo "Ensuring download directory '${download_dir}' exists..."
