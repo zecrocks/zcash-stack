@@ -49,6 +49,12 @@ services:
         mode: 0440
     volumes:
       - lwd-cache:/var/lib/lightwalletd/db
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:9068/metrics >/dev/null 2>&1 || exit 1"]
+      start_period: 20s
+      interval: 30s
+      timeout: 5s
+      retries: 5
     command: >
       --no-tls-very-insecure
       --grpc-bind-addr=0.0.0.0:9067
@@ -59,6 +65,12 @@ services:
       --log-level=7
       --donation-address=u14yr5fr2gzhedzrlmymtjp8jqsdryh6zpypnh8k2e2hq9z6jluz9hn9u088j02c3zphnf30he4pnm62ccyae6hfjjuqxlddhezw2te5p6xxhm68vvvpvynnzdcegq4c5u06slq673emarwjy5z0enj2ry53avx0nsmftpx4hhh5rhpgnc 
     ports:
+      # For VPS proxy setup, use localhost-only binding to secure SSH tunnel
+      # Uncomment the lines below and comment out the public ports for VPS setup
+      # - "127.0.0.1:9067:9067"   # gRPC (localhost only for SSH tunnel)
+      # - "127.0.0.1:9068:9068"   # HTTP metrics (localhost only)
+
+      # For direct/public access (default)
       - "9067:9067" # gRPC
       - "9068:9068" # HTTP
 
