@@ -24,7 +24,11 @@ services:
       interval: 15s
       timeout: 10s
       retries: 3
-      test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "cut -d ':' -f 3 /proc/net/tcp | cut -d ' ' -f 1 | grep $(printf '%x' 8232) || exit 1"
 
   lightwalletd:
     image: electriccoinco/lightwalletd

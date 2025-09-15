@@ -1,6 +1,6 @@
 # Docker Zcash Light Wallet
 
-Welcome to the Docker-side of this Zcash node hosting repository. 
+Welcome to the Docker-side of this Zcash node hosting repository.
 
 > [!NOTE]
 > If you came from [class-1-sync](../docs/class-1-sync.md): great!
@@ -8,7 +8,7 @@ Welcome to the Docker-side of this Zcash node hosting repository.
 
 ## Overview of components
 
-Let's start with an overview of each component in a basic Zcash stack, and a summary of what they do. 
+Let's start with an overview of each component in a basic Zcash stack, and a summary of what they do.
 
 ![Block diagram showing the components of basic standard Zcash stack.](../docs/images/block_diagram.png)
 
@@ -37,7 +37,7 @@ cd zcash-stack/docker
 ```
 
 Adding your donation address to the lighwalletd config:
-* in docker-compose.yml about line 53 you'll see: 
+* in docker-compose.yml about line 53 you'll see:
 ```
 --donation-address==u14...
 ```
@@ -48,17 +48,17 @@ Then bring up the docker container.
 docker compose -f docker-compose.yml up
 ```
 
-To run deattached in the background even if ssh connection drops: 
+To run deattached in the background even if ssh connection drops:
 ```
 docker compose -f docker-compose.yml up --detach
 ```
-To stop the system, but with removing the volumes that get created. 
+To stop the system, but with removing the volumes that get created.
 ```
 docker compose -f docker-compose.yml down
 ```
 
 ## Troubleshooting and Docker Down
-As happens in life, there are often troubles and times when a clean start is desired. Here are some helpful debugging options for stopping the Docker continers. 
+As happens in life, there are often troubles and times when a clean start is desired. Here are some helpful debugging options for stopping the Docker continers.
 
 Stop and remove all containers, networks, and volumes for this project
 ```
@@ -91,24 +91,52 @@ docker compose -f docker-compose.yml down -v --remove-orphans && docker system p
 ```
 
 ## Sync the Blockchain
-> [!NOTE] 
+> [!NOTE]
 > This Docker file will begin to sync the blockchain.
 
-When the Docker containers are started and running properly for the first time, they will begin to sync the blockchain. This means re-verifying each block in the entire chain. As you might imagine, this takes quiet some time. Here too, there are options. 
+When the Docker containers are started and running properly for the first time, they will begin to sync the blockchain. This means re-verifying each block in the entire chain. As you might imagine, this takes quite some time. Here too, there are options.
 
 ### Lengthy Process: Let it Run
-You could let the containers run, and sync the blockchain as designed. The blockchain will be synced into the ```data``` directory, which can be useful for copying it to other devices.
+You could let the containers run, and sync the blockchain as designed. The blockchain will be synced into the `data` directory, which can be useful for copying it to other devices.
 
-It will take several days to sync depending on the speed of your computer and internet connection. This is the most secure way of doing it.
+It will take several days to sync depending on the speed of your computer and Internet connection. This is the most secure way of doing it.
 
 ### Speedy Process: Download a Snapshot
-In a hurry? We host a snapshot of the blockchain that you can download faster than synchronizing it from scratch. It's not the purest way to synchronize, as you are trusting (aka assuming) that this snapshot is accurate, but it can save you over a week, especially if you are on a slow device.
+In a hurry? We host a snapshot of the blockchain that you can download faster than synchronizing it from scratch. It's not the purest way to synchronize, as you are trusting (that is, assuming) that this snapshot is accurate, but it can save you over a week, especially if you are on a slow device.
 
 Run the [`download-snapshot.sh`](download-snapshot.sh) first, then bring the Docker Compose configuration of your choosing `up`.
 
 ```sh
-./download-snapshot.sh                        # Run the script FROM THIS DIRECTORY.
-docker compose -f docker-compose.zaino.yml up # The configuration assumes a relative path to the downloaded data.
+./download-snapshot.sh                           # Run the script FROM THIS DIRECTORY.
+docker compose -f docker-compose.yml up --detach # Assumes a relative path to the downloaded data.
+```
+
+Once the containers have started and are reporting a "Healthy" status, you can check their progress by following the logs in a new terminal:
+
+```sh
+docker compose -f docker-compose.yml logs --follow
+```
+
+You should see lines of this sort:
+
+```
+zebra-1         | 2025-09-16T00:13:13.521565Z  INFO {zebrad="d1a3c74" net="Main"}:sync:try_to_sync:try_to_sync_once: zebrad::components::sync: extending tips tips.len=1 in_flight=19 extra_hashes=0 lookahead_limit=20 state_tip=Some(Height(3047128))
+lightwalletd-1  | {"app":"lightwalletd","level":"info","msg":"Adding block to cache 598871 0000000001a8d43526604916885deb4a075eb5ec4eab462ee85141b6dccd5f56","time":"2025-09-16T00:13:16Z"}
+```
+
+Another way to check the health of your `zebrad` server is to compose a JSON-RPC command to one of [its existing methods](https://github.com/ZcashFoundation/zebra/tree/e99c0b7196c8cc02c22c5f7669dc95dc73f8753a/zebra-rpc/src/methods/types). For example, to get info about the node's peers on the Zcash network, try this command from your Docker *host* machine (not from within the running containers):
+
+```sh
+curl \
+    -H 'Content-Type: application/json' \
+    --data-binary '{"jsonrpc":"2.0","id":"curltest","method":"getpeerinfo"}' \
+    localhost:8232
+```
+
+You might get output of the following sort:
+
+```
+{"jsonrpc":"2.0","id":"curltest","result":[{"addr":"18.27.125.103:8233","inbound":false},{"addr":"99.56.151.125:8233","inbound":false},{"addr":"147.135.39.166:8233","inbound":false}]}
 ```
 
 ## Next Steps
