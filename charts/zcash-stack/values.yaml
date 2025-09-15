@@ -63,6 +63,7 @@ zcashd:
   mine: false
   mining_address:
   genproclimit: 1
+  exportdir: /tmp
 
 rpc:
   credentials:

@@ -21,7 +21,11 @@ data:
     {{- if .Values.zcashd.explorer }}
     insightexplorer=1
     {{- end }}
-    {{- if not .Values.zcashd.wallet }}
+    {{- if .Values.zcashd.wallet }}
+    {{- if .Values.zcashd.exportdir }}
+    exportdir={{ .Values.zcashd.exportdir }}
+    {{- end }}
+    {{- else }}
     disablewallet=1
     {{- end }}
     {{- if .Values.zcashd.mine }}
