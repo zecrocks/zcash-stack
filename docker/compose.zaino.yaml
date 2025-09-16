@@ -1,5 +1,4 @@
-version: '3.8'
-
+---
 services:
   init-zebra-env:
     image: zfnd/zebra:latest
@@ -30,8 +29,8 @@ services:
         gid: '10001'
         mode: 0440
     ports:
-      - "8233:8233" # Mainnet Network (for peer connections)
-      - "8232:8232" # Opens an RPC endpoint
+      - "0.0.0.0:8233:8233" # Mainnet Network (for peer connections)
+      - "0.0.0.0:8232:8232" # Opens an RPC endpoint
     depends_on:
       init-zebra-env:
         condition: service_completed_successfully

@@ -1,8 +1,11 @@
-version: "3.8"
-
+# Our "default" Docker Compose configuration for ARM hosts.
+#
+# In this file, we bring up Zebra, Lightwalletd, and a Watchtower
+# instance, each built for a host running on an ARM architecture.
+---
 services:
   zebra:
-    image: zfnd/zebra:latest
+    image: emersonian/zcash-zebra:latest
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
@@ -17,8 +20,8 @@ services:
         gid: '2001'
         mode: 0440
     ports:
-      - "8233:8233" # Mainnet Network (for peer connections)
-      - "8232:8232" # Opens an RPC endpoint
+      - "0.0.0.0:8233:8233" # Mainnet Network (for peer connections)
+      - "0.0.0.0:8232:8232" # Opens an RPC endpoint
     healthcheck:
       start_period: 1m
       interval: 15s
@@ -31,7 +34,7 @@ services:
         - "cut -d ':' -f 3 /proc/net/tcp | cut -d ' ' -f 1 | grep $(printf '%x' 8232) || exit 1"
 
   lightwalletd:
-    image: electriccoinco/lightwalletd
+    image: emersonian/zcash-lwd
     depends_on:
       zebra:
         condition: service_healthy

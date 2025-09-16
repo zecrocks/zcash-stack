@@ -1,6 +1,6 @@
 # Docker Zcash Light Wallet
 
-Welcome to the Docker-side of this Zcash node hosting repository.
+Welcome to the Docker side of this Zcash node hosting repository.
 
 > [!NOTE]
 > If you came from [class-1-sync](../docs/class-1-sync.md): great!
@@ -29,92 +29,107 @@ In the diagram above, we see several important infrastructure components, includ
 
 ## Getting Started
 
-Install Docker on your server/VM and check out this source code repository.
+1.  Install Docker on your host machine and check out this source code repository:
+    ```sh
+    git clone https://github.com/zecrocks/zcash-stack.git
+    cd zcash-stack/docker
+    ```
+1. Optionally, declare your own donation address to publish via the `lightwalletd` configuration:
+    1. In the [`.env`](./env) file, change the value of `LIGHTWALLETD_DONATION_ADDRESS` to your own wallet's unified shielded address.
+    ```sh
+    LIGHTWALLETD_DONATION_ADDRESS=u14...
+    ```
+1. Bring the services `up`:
+    ```sh
+    docker compose up
+    ```
 
-```
-git clone https://github.com/zecrocks/zcash-stack.git
-cd zcash-stack/docker
-```
+If you choose to use a Docker Compose configuration different than the default ([`compose.yaml`](./compose.yaml)), be sure to specify the path to the configuration file with the `-f` short or `--file` long option. For example:
 
-Adding your donation address to the lighwalletd config:
-* in docker-compose.yml about line 53 you'll see:
-```
---donation-address==u14...
-```
-Change that to your unified sheilded address.
-Then bring up the docker container.
-
-```
-docker compose -f docker-compose.yml up
-```
-
-To run deattached in the background even if ssh connection drops:
-```
-docker compose -f docker-compose.yml up --detach
-```
-To stop the system, but with removing the volumes that get created.
-```
-docker compose -f docker-compose.yml down
+```sh
+docker compose -f compose.arm.yaml up --detach`
 ```
 
-## Troubleshooting and Docker Down
-As happens in life, there are often troubles and times when a clean start is desired. Here are some helpful debugging options for stopping the Docker continers.
+## Troubleshooting and more
 
-Stop and remove all containers, networks, and volumes for this project
-```
-docker compose -f docker-compose.yml down -v --remove-orphans
+To keep the containers running in the background even if your SSH connection drops, `--detach` them when you bring them `up`:
+
+```sh
+docker compose up --detach
 ```
 
-Remove all unused containers, networks, images, and volumes
+To stop the system, and remove the volumes that get created, bring them `down`:
+
+```sh
+docker compose down
 ```
+
+Stop and remove all containers, networks, and volumes for this project:
+
+```sh
+docker compose  down -v --remove-orphans
+```
+
+Remove all unused containers, networks, images, and volumes:
+
+```sh
 docker system prune -a --volumes -f
 ```
 
-Remove any remaining volumes specifically
-```
+Remove any remaining volumes specifically:
+
+```sh
 docker volume prune -f
 ```
 
-Remove any remaining networks
-```
+Remove any remaining networks:
+```sh
 docker network prune -f
 ```
 
-Restart Docker daemon (optional but can help with network issues)
-```
+Restart Docker daemon (optional, but can help with some network issues):
+
+```sh
 systemctl restart docker
 ```
 
-All together now! Hard removal of everything.
-```
-docker compose -f docker-compose.yml down -v --remove-orphans && docker system prune -a --volumes -f && docker volume prune -f && docker network prune -f
+All together now! Hard removal of everything:
+
+```sh
+docker compose down -v --remove-orphans \
+    && docker system prune -a --volumes -f \
+    && docker volume prune -f \
+    && docker network prune -f
 ```
 
 ## Sync the Blockchain
+
 > [!NOTE]
 > This Docker file will begin to sync the blockchain.
 
 When the Docker containers are started and running properly for the first time, they will begin to sync the blockchain. This means re-verifying each block in the entire chain. As you might imagine, this takes quite some time. Here too, there are options.
 
 ### Lengthy Process: Let it Run
+
 You could let the containers run, and sync the blockchain as designed. The blockchain will be synced into the `data` directory, which can be useful for copying it to other devices.
 
 It will take several days to sync depending on the speed of your computer and Internet connection. This is the most secure way of doing it.
 
 ### Speedy Process: Download a Snapshot
+
 In a hurry? We host a snapshot of the blockchain that you can download faster than synchronizing it from scratch. It's not the purest way to synchronize, as you are trusting (that is, assuming) that this snapshot is accurate, but it can save you over a week, especially if you are on a slow device.
 
 Run the [`download-snapshot.sh`](download-snapshot.sh) first, then bring the Docker Compose configuration of your choosing `up`.
 
 ```sh
-./download-snapshot.sh                           # Run the script FROM THIS DIRECTORY.
-docker compose -f docker-compose.yml up --detach # Assumes a relative path to the downloaded data.
+./download-snapshot.sh     # Run the script FROM THIS DIRECTORY.
+docker compose up --detach # Assumes a relative path to the downloaded data.
 ```
 
 Once the containers have started and are reporting a "Healthy" status, you can check their progress by following the logs in a new terminal:
 
 ```sh
-docker compose -f docker-compose.yml logs --follow
+docker compose logs --follow
 ```
 
 You should see lines of this sort:
@@ -140,4 +155,5 @@ You might get output of the following sort:
 ```
 
 ## Next Steps
+
 Take a look at our documentation in [class-2-connect](../docs/class-2-connect.md) to learn about connecting your new node to the world. 🌎
