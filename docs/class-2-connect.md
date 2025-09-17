@@ -1,8 +1,8 @@
 # Welcome to the Zcash Node Workshop: Connect Week!
 
-This continues our dicussion of hosting a zcash full node. If you are just starting here, perhaps you missed the [workshop overview](./README.md). 
+This continues our dicussion of hosting a Zcash full node. If you are just starting here, perhaps you missed the [workshop overview](./README.md).
 
-## Workshop TLDR
+## Workshop TL;DR
 1. [Sync](./class-1-sync.md) - Initial set up:
     1. Set up a virtual machine (VM) on hardware of your choice.
     1. Launch the Zcash service containers via Docker or Kubernetes on your VM.
@@ -26,7 +26,7 @@ This document covers Connect.
 
 ## Connecting your Server to the World Wide Web3
 
-Let's talk about personal privacy and shielding IP address. Now that we have a server running, we will want to connect it to the outside world so that clients can make use of it.
+Let's talk about personal privacy and shielding your service's IP address. Now that we have a server running, we will want to connect it to the outside world so that clients can make use of it.
 
 In brief, there are more or less three different broad approaches you may want to take when operating a service. In this workshop, we will call these:
 
@@ -58,7 +58,7 @@ For this, you can make use of various IP-obscuring tunnel technologies. [Tailsca
 
 When you use an IP-obscured method for your own privacy, you should remove the direct/static method from your service so that only the more private avenue exists. You can also choose to add this more private method *in addition to* the less private one if you simply need different capabilities or are using these avenues for censorship circumvention rather than for privacy, per se.
 
-Direct/static method in docker-compose.zaino.yml:
+Direct/static method in `compose.zaino.yaml`:
 ```
 zaino: 
     ...

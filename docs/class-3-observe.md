@@ -25,34 +25,40 @@ This continues our dicussion of hosting a zcash full node. If you are just start
 
 ## Manual Monitoring
 You can manually check your node's status using these commands:
-```bash
-docker compose -f docker-compose.yml ps -a
+
+```sh
+docker compose ps -a
 ```
+
 It might look something like this: 
+
 ```
 NAME                        IMAGE                              COMMAND                  SERVICE            CREATED        STATUS                    PORTS
 docker-init-zaino-perms-1   busybox:latest                     "sh -c 'mkdir -p /ho…"   init-zaino-perms   23 hours ago   Exited (0) 15 hours ago   
 docker-zebra-1              zfnd/zebra:latest                  "entrypoint.sh zebrad"   zebra              23 hours ago   Up 15 hours (healthy)    0.0.0.0:8232-8233->8232-8233/tcp, [::]:8232-8233->8232-8233/tcp
 zaino                       emersonian/zcash-zaino:0.1.2-zr4   "/app/zainod --confi…"   zaino              23 hours ago   Up 15 hours               8137/tcp
 ```
+
 Logs will be here:
+
+```sh
+# List running containers in Docker Compose project.
+docker compose ps -a
+
+# Show last 20 lines of Zebra's logs.
+docker compose logs zebra --tail=20
+
+# Show last 20 lines of lightwalletd's logs.
+docker compose logs lightwalletd --tail=20
+
+# Monitor logs in real-time by following their output.
+docker compose logs --follow
 ```
-# Check container status
-docker compose -f docker/docker-compose.yml ps -a
 
-# Check Zebra logs
-docker compose -f docker/docker-compose.yml logs zebra --tail=20
+## `hosh` Monitoring Tool
 
-# Check lightwalletd logs  
-docker compose -f docker/docker-compose.yml logs lightwalletd --tail=20
-
-# Monitor real-time logs
-docker compose -f docker/docker-compose.yml logs -f
-```
-
-## hosh Monitoring Tool
-
-Occasionally check if your server is running using zecrock tools: [hosh Monitoring Tool](https://hosh.zec.rocks/zec)
+Occasionally check if your server is running using [ZECrocks's `hosh` monitoring ools](https://hosh.zec.rocks/zec).
 
 ## Good night friend
-Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a Celsius knowing you are providing diversity and reliability to the privacy-coin Zcash ecosystem.
+
+Slip away into the night, knowing your server is running and you've done a small service to Zcash ecosystem by ensuring the Right to Transact for future generations. Find a cozy spot, sit back, and sip a Celsius knowing you are providing diversity and reliability to the Zcash privacy coin ecosystem.
