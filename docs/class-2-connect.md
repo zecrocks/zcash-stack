@@ -51,7 +51,12 @@ In many cases, system operators don't want to reveal who they are to everyone in
 
 One helpful analogy may be to think of public operation similarly to how older generations shipped massive books of phone numbers and addresses to every resident in the neighborhood. Today we don't often want to broadcast our IP address and other personal information out to every resident of the Internet. This requires configuring your service to operate in an IP-obscured fashion, such that we aren't revealing certain information about ourselves.
 
-To do this, you can make use of various IP-obscuring tunnel technologies. [Tailscale Funnel](https://tailscale.com/kb/1223/funnel) offers tunneling technology that let you route traffic from the broader Internet to a local server while also providing some measure of IP address obfuscation to the broader world.
+To do this, you can make use of various IP-obscuring tunnel technologies. Some popular options include:
+
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+- [Tailscale Funnel](https://tailscale.com/kb/1223/funnel)
+
+Each of these tools offers tunneling technology that let you route traffic from the broader Internet to a local server while also providing some measure of IP address obfuscation to the broader world.
 
 When you use an IP-obscured method for your own privacy, you should remove the direct/static method from your service so that only the more private avenue exists. Alternatively, you can also choose to add this more private method *in addition to* the less private one if you simply need different capabilities or are using these avenues for censorship circumvention rather than for privacy, per se.
 
