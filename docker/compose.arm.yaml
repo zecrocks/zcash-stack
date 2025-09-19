@@ -63,7 +63,7 @@ services:
       --data-dir=/var/lib/lightwalletd/db
       --log-file=/dev/stdout
       --log-level=7
-      --donation-address=u14yr5fr2gzhedzrlmymtjp8jqsdryh6zpypnh8k2e2hq9z6jluz9hn9u088j02c3zphnf30he4pnm62ccyae6hfjjuqxlddhezw2te5p6xxhm68vvvpvynnzdcegq4c5u06slq673emarwjy5z0enj2ry53avx0nsmftpx4hhh5rhpgnc 
+      --donation-address=${LIGHTWALLETD_DONATION_ADDRESS}
     ports:
       # For VPS proxy setup, use localhost-only binding to secure SSH tunnel
       # Uncomment the lines below and comment out the public ports for VPS setup
