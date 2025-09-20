@@ -1,5 +1,8 @@
-version: "3.8"
-
+# Our "default" Docker Compose configuration.
+#
+# In this file, we bring up Zebra, Lightwalletd, and a Watchtower
+# instance, each built for a host running Intel x86 architecture.
+---
 services:
   zebra:
     image: zfnd/zebra:latest
@@ -17,14 +20,18 @@ services:
         gid: '2001'
         mode: 0440
     ports:
-      - "8233:8233" # Mainnet Network (for peer connections)
-      - "8232:8232" # Opens an RPC endpoint
+      - "0.0.0.0:8233:8233" # Mainnet Network (for peer connections)
+      - "0.0.0.0:8232:8232" # Opens an RPC endpoint
     healthcheck:
       start_period: 1m
       interval: 15s
       timeout: 10s
       retries: 3
-      test: ["CMD-SHELL", "curl --data-binary '{\"id\":\"curltest\", \"method\": \"getinfo\"}' -H 'content-type: application/json' 127.0.0.1:8232 || exit 1"]
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "cut -d ':' -f 3 /proc/net/tcp | cut -d ' ' -f 1 | grep $(printf '%x' 8232) || exit 1"
 
   lightwalletd:
     image: electriccoinco/lightwalletd
@@ -50,7 +57,7 @@ services:
       --data-dir=/var/lib/lightwalletd/db
       --log-file=/dev/stdout
       --log-level=7
-      --donation-address=u14yr5fr2gzhedzrlmymtjp8jqsdryh6zpypnh8k2e2hq9z6jluz9hn9u088j02c3zphnf30he4pnm62ccyae6hfjjuqxlddhezw2te5p6xxhm68vvvpvynnzdcegq4c5u06slq673emarwjy5z0enj2ry53avx0nsmftpx4hhh5rhpgnc 
+      --donation-address=${LIGHTWALLETD_DONATION_ADDRESS}
     ports:
       - "9067:9067" # gRPC
       - "9068:9068" # HTTP
@@ -76,4 +83,3 @@ volumes:
       o: bind,create=true
       device: ${PWD}/data/lwd-cache
     name: lwd-cache
-

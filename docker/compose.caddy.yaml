@@ -1,5 +1,9 @@
-version: '3.8'
-
+# Simple utility helper for a Caddy server, mostly useful for TLS.
+#
+# In this file, we bring up a Caddy HTTP server. We like Caddy for
+# the ease with which it gives us the ability to configure a TLS
+# endpoint for our node, since it has a built-in Let's Encrypt tool.
+---
 services:
   caddy:
     image: caddy:latest
@@ -7,8 +11,8 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     ports:
-      - "80:80"
-      - "443:443"
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
     volumes:
       - ./configs/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./data/caddy_data:/data
