@@ -1,0 +1,28 @@
+# Simple `zcashd` Docker Compose configuration.
+#
+# THIS DAEMON IS BEING DEPRECATED AND SHOULD NOT BE USED FOR NEW
+# SERVERS. ONLY USE THIS IF YOU KNOW YOU HAVE A SPECIFIC NEED FOR
+# THE OLDER IMPLEMENTATION OF A ZCASH FULL NODE.
+#
+# Instead of this configuration, you should use `compose.yaml`, the
+# new default with the `zebrad` service configuration.
+---
+services:
+  zcashd:
+    image: electriccoinco/zcashd:v6.3.0
+    restart: unless-stopped
+    configs:
+      - source: zcashd_conf
+        target: /etc/zcashd/zcashd.conf
+    volumes:
+      - ./data/zcashd-cache:/srv/zcashd/.zcash
+      - ./data/zcashd-params:/srv/zcashd/.zcash-params
+    ports:
+      - 0.0.0.0:8232:8232
+      - 0.0.0.0:8233:8233
+    command: >
+      -conf=/etc/zcashd/zcashd.conf
+
+configs:
+  zcashd_conf:
+    file: ./configs/zcashd.conf
