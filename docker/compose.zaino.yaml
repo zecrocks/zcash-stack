@@ -1,5 +1,4 @@
-version: '3.8'
-
+---
 services:
   init-zebra-env:
     image: zfnd/zebra:latest
@@ -30,8 +29,8 @@ services:
         gid: '10001'
         mode: 0440
     ports:
-      - "8233:8233" # Mainnet Network (for peer connections)
-      - "8232:8232" # Opens an RPC endpoint
+      - "0.0.0.0:8233:8233" # Mainnet Network (for peer connections)
+      - "0.0.0.0:8232:8232" # Opens an RPC endpoint
     depends_on:
       init-zebra-env:
         condition: service_completed_successfully
@@ -40,7 +39,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      test: ["CMD", "sh", "-c", "cat /proc/net/tcp | grep :2028 || exit 1"]
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "cut -d ':' -f 3 /proc/net/tcp | cut -d ' ' -f 1 | grep $(printf '%x' 8232) || exit 1"
 
 
   init-zaino-perms:

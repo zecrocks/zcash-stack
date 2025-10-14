@@ -1,0 +1,18 @@
+---
+services:
+  autossh-lwd:
+    image: jnovack/autossh:2.1.0
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      SSH_REMOTE_USER: "root"
+      SSH_REMOTE_HOST: "${VPS_IP}"      # Set in .env file
+      SSH_REMOTE_PORT: "22"
+      SSH_TARGET_HOST: "127.0.0.1"      # Home node lightwalletd
+      SSH_TARGET_PORT: "9067"           # Home lightwalletd gRPC port
+      SSH_TUNNEL_PORT: "19067"          # Port opened on VPS
+      SSH_STRICT_HOST_IP_CHECK: "false"
+      SSH_OPTIONS: "-o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3"
+    volumes:
+      # Use ${HOME}, not ~
+      - ${HOME}/autossh-keys/id_ed25519:/id_rsa:ro

@@ -1,1 +1,13 @@
+# Lightwalletd's cache database.
+docker/data/lwd-cache/db/
+
+# Blockchain data itself. Regenerate this quickly by using the
+# provided `docker/download-snapshot.sh` script.
+docker/data/zebrad-cache/state
+docker/data/zcashd-cache/*
+
+# macOS Finder cruft.
 .DS_Store
+
+# Various "$EDITOR" cruft.
+*.swp
