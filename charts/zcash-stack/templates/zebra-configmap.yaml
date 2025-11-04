@@ -11,7 +11,7 @@ data:
     {{- else }}
     network = "Mainnet"
     {{- end }}
-    listen_addr = "0.0.0.0"
+    listen_addr = "0.0.0.0:{{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}"
     [state]
     cache_dir = "/var/cache/zebrad-cache"
     [rpc]

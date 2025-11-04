@@ -14,6 +14,8 @@ spec:
       labels:
         app: {{ .Values.zebra.name }}
     spec:
+      # These automatic ENV do not play nicely with Zebra's entrypoint
+      enableServiceLinks: false
       initContainers:
       {{- if .Values.zebra.initSnapshot.enabled }}
       - name: restore-snapshot
@@ -47,6 +49,7 @@ spec:
         image: {{ .Values.zebra.image.repository }}:{{ .Values.zebra.image.tag }}@sha256:{{ .Values.zebra.image.hash }}
         imagePullPolicy: {{ .Values.zebra.image.pullPolicy }}
         command: ["zebrad", "-c", "/etc/zebrad/zebrad.toml"]
+        args: []
         ports:
         - containerPort: {{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}
           name: zebra-rpc
