@@ -55,6 +55,32 @@ spec:
           name: zebra-rpc
         - containerPort: {{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}
           name: zebra-p2p
+        {{- if or .Values.zebra.probes.readiness.enabled .Values.zebra.probes.liveness.enabled }}
+        - containerPort: 8080
+          name: zebra-health
+        {{- end }}
+        {{- if .Values.zebra.probes.readiness.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: {{ .Values.zebra.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.zebra.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zebra.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zebra.probes.readiness.failureThreshold }}
+          successThreshold: {{ .Values.zebra.probes.readiness.successThreshold }}
+        {{- end }}
+        {{- if .Values.zebra.probes.liveness.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /healthy
+            port: 8080
+          initialDelaySeconds: {{ .Values.zebra.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.zebra.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zebra.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zebra.probes.liveness.failureThreshold }}
+          successThreshold: {{ .Values.zebra.probes.liveness.successThreshold }}
+        {{- end }}
         volumeMounts:
         - name: {{ .Values.zebra.name }}-data
           mountPath: /var/cache/zebrad-cache

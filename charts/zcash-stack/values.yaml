@@ -28,6 +28,21 @@ zebra:
   #   memory: 4Gi
   # limits:
   #   memory: 16Gi
+  probes:
+    readiness:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      initialDelaySeconds: 90
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+      successThreshold: 1
 
 zcashd:
   enabled: false
