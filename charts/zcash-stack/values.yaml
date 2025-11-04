@@ -39,6 +39,7 @@ zcashd:
     hash: aacc1a02c80c284210e4472cd6f7fc2576bc5e39bf9637b259eb5c732658c9d2
     pullPolicy: IfNotPresent
   replicas: 1
+  podManagementPolicy: Parallel
   initSnapshot:
     enabled: false
     url: https://link.storjshare.io/s/jx5wylg5q6hyg2myyah5eldbjs7q/nodedumps/zec/zcashd-2024-03-31.tar?download=1

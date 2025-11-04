@@ -5,6 +5,7 @@ metadata:
   name: {{ .Values.zcashd.name }}
 spec:
   serviceName: {{ .Values.zcashd.name }}-service
+  podManagementPolicy: {{ .Values.zcashd.podManagementPolicy }}
   replicas: {{ .Values.zcashd.replicas }}
   selector:
     matchLabels:
