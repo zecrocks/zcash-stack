@@ -55,15 +55,17 @@ spec:
           name: zebra-rpc
         - containerPort: {{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}
           name: zebra-p2p
-        {{- if or .Values.zebra.probes.readiness.enabled .Values.zebra.probes.liveness.enabled }}
         - containerPort: 8080
+          name: zebra-metrics
+        {{- if or .Values.zebra.probes.readiness.enabled .Values.zebra.probes.liveness.enabled }}
+        - containerPort: 8081
           name: zebra-health
         {{- end }}
         {{- if .Values.zebra.probes.readiness.enabled }}
         readinessProbe:
           httpGet:
             path: /ready
-            port: 8080
+            port: 8081
           initialDelaySeconds: {{ .Values.zebra.probes.readiness.initialDelaySeconds }}
           periodSeconds: {{ .Values.zebra.probes.readiness.periodSeconds }}
           timeoutSeconds: {{ .Values.zebra.probes.readiness.timeoutSeconds }}
@@ -74,7 +76,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /healthy
-            port: 8080
+            port: 8081
           initialDelaySeconds: {{ .Values.zebra.probes.liveness.initialDelaySeconds }}
           periodSeconds: {{ .Values.zebra.probes.liveness.periodSeconds }}
           timeoutSeconds: {{ .Values.zebra.probes.liveness.timeoutSeconds }}
