@@ -9,8 +9,8 @@ zebra:
   testnet: false
   image:
     repository: zfnd/zebra
-    tag: 4.5.1
-    hash: 0a1f00e6847fa63990730a736c96651395251e262a078946cfc99dd483509695
+    tag: 4.5.3
+    hash: 332c917272a26a24f6bad56b8a3bd09a3fb16ce44cc6192d6df50eb2b26aff65
     pullPolicy: IfNotPresent
   replicas: 1
   initSnapshot:
@@ -50,8 +50,8 @@ zcashd:
   testnet: false
   image:
     repository: electriccoinco/zcashd
-    tag: v6.12.3
-    hash: 22cd39818ddf3125fc236f6d55851061631f6acbdf80cf0e83e03e3bbc6d0463
+    tag: v6.12.5
+    hash: 558f41b7b8b15e1b408247914ba9ed7b9d3c62f1061823bb811b8b24a693f349
     pullPolicy: IfNotPresent
   replicas: 1
   podManagementPolicy: Parallel
@@ -93,8 +93,8 @@ lightwalletd:
   donationAddress:
   image:
     repository: electriccoinco/lightwalletd
-    tag: v0.4.18
-    hash: 0267fabc66c9b62ee0b5143a47e8c2c0969c1b759a990cba44d00a92089be07d
+    tag: v0.4.19
+    hash: a3dfb04b4054b78ae3107dcc804c3a15a6e38d1f0dfcadeac48da482dd1d3448
     pullPolicy: IfNotPresent
   replicas: 1
   initSnapshot:
