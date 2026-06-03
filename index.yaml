@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   zcash-stack:
   - apiVersion: v2
+    created: "2026-06-03T07:18:53.410050679Z"
+    description: Zcash integrated with a light wallet daemon and block explorer
+    digest: 58b163ab5b9e8c139006cb818bf12fa43faa18da3b21dd115737241963629b6e
+    name: zcash-stack
+    type: application
+    urls:
+    - https://github.com/zecrocks/zcash-stack/releases/download/zcash-stack-0.0.28/zcash-stack-0.0.28.tgz
+    version: 0.0.28
+  - apiVersion: v2
     created: "2026-06-02T21:21:23.08434959Z"
     description: Zcash integrated with a light wallet daemon and block explorer
     digest: 403eb7ed03c92fb7e0a10799f8f4cb47c160aa10e0d84530c33d11c6389e4625
@@ -235,4 +244,4 @@ entries:
     urls:
     - https://github.com/emersonian/zcash-stack/releases/download/zcash-stack-0.0.2/zcash-stack-0.0.2.tgz
     version: 0.0.2
-generated: "2026-06-02T21:21:23.084599008Z"
+generated: "2026-06-03T07:18:53.410751486Z"
