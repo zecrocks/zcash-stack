@@ -11,3 +11,4 @@ docker/data/zcashd-cache/*
 
 # Various "$EDITOR" cruft.
 *.swp
+deploy/*

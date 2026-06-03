@@ -50,8 +50,8 @@ zcashd:
   testnet: false
   image:
     repository: electriccoinco/zcashd
-    tag: v6.12.5
-    hash: 558f41b7b8b15e1b408247914ba9ed7b9d3c62f1061823bb811b8b24a693f349
+    tag: 6.20.0
+    hash: 745098bbec91b7d0ae013c44bcd2400b660b3c7ad80935396df4848af529bfc0
     pullPolicy: IfNotPresent
   replicas: 1
   podManagementPolicy: Parallel
