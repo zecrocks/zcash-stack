@@ -1,12 +1,11 @@
 {{- if .Values.zebra.enabled }}
+# Headless service for stable per-replica DNS (zebra-0.zebra-service.<ns>.svc).
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.zebra.name }}
+  name: {{ .Values.zebra.name }}-service
 spec:
-  type: {{ .Values.zebra.service.type }}
-  # ClientIP pins each consumer to one zebra replica; set None to round-robin.
-  sessionAffinity: {{ .Values.zebra.service.sessionAffinity | default "ClientIP" }}
+  clusterIP: None
   selector:
     app: {{ .Values.zebra.name }}
   ports:

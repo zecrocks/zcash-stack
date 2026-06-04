@@ -6,6 +6,10 @@ metadata:
 spec:
   serviceName: {{ .Values.zebra.name }}-service
   replicas: {{ .Values.zebra.replicas }}
+  podManagementPolicy: {{ .Values.zebra.podManagementPolicy | default "Parallel" }}
+  minReadySeconds: {{ .Values.zebra.minReadySeconds | default 0 }}
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: {{ .Values.zebra.name }}
@@ -14,59 +18,107 @@ spec:
       labels:
         app: {{ .Values.zebra.name }}
     spec:
-      # These automatic ENV do not play nicely with Zebra's entrypoint
+      {{- if and .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+      serviceAccountName: {{ .Values.zebra.name }}-noderead
+      {{- end }}
+      # Service-link env vars break zebra's entrypoint
       enableServiceLinks: false
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 2001 "global" .Values.global) | nindent 6 }}
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.zebra.topologySpread "name" .Values.zebra.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
       initContainers:
-      {{- if .Values.zebra.initSnapshot.enabled }}
-      - name: restore-snapshot
-        image: alpine:{{ .Values.global.images.alpine.tag }}@sha256:{{ .Values.global.images.alpine.hash }}
+      {{- if and .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+      # Read this pod's node ExternalIP so zebra can advertise a reachable P2P address.
+      - name: detect-public-ip
+        image: {{ .Values.global.images.kubectl.repository }}:{{ .Values.global.images.kubectl.tag }}
         command: ["/bin/sh", "-c"]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
         args:
           - |
-            if [ -z "$(ls -A /data | grep -v '^lost+found$')" ]; then
-              echo "Volume is empty. Downloading and extracting snapshot...";
-              wget -qO- "{{ .Values.zebra.initSnapshot.url }}" | tar --strip-components=1 -xvf - -C /data
-              echo "Download and extraction complete.";
-            else
-              echo "Volume is not empty. Skipping download and extraction.";
-            fi
-            chown -R 2001 /data
+            set -e
+            IP="$(kubectl get node "$NODE_NAME" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}')"
+            printf '%s' "$IP" > /shared/pubip
+            echo "node $NODE_NAME ExternalIP: $IP"
         volumeMounts:
-        - name: {{ .Values.zebra.name }}-data
-          mountPath: /data
-      {{- else }}
-      - name: set-permissions
-        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
-        command: ["/bin/sh", "-c"]
-        args:
-          - chown -R 2001 /data
-        volumeMounts:
-        - name: {{ .Values.zebra.name }}-data
-          mountPath: /data
+        - name: zebra-pubip
+          mountPath: /shared
+      {{- end }}
+      {{- if .Values.zebra.initSnapshot.enabled }}
+      {{- include "zcash-stack.restoreInitContainer" (dict
+            "url" .Values.zebra.initSnapshot.url
+            "uid" "2001"
+            "claimName" (printf "%s-data" .Values.zebra.name)
+            "doChown" (not .Values.global.fsGroup.enabled)
+            "global" .Values.global) | nindent 6 }}
+      {{- else if not .Values.global.fsGroup.enabled }}
+      {{- include "zcash-stack.setPermissionsInitContainer" (dict
+            "uid" "2001"
+            "claimName" (printf "%s-data" .Values.zebra.name)
+            "global" .Values.global) | nindent 6 }}
       {{- end }}
       containers:
       - name: zebra
-        image: {{ .Values.zebra.image.repository }}:{{ .Values.zebra.image.tag }}@sha256:{{ .Values.zebra.image.hash }}
+        image: {{ .Values.zebra.image.repository }}:{{ .Values.zebra.image.tag }}{{ with .Values.zebra.image.hash }}@sha256:{{ . }}{{ end }}
         imagePullPolicy: {{ .Values.zebra.image.pullPolicy }}
+        {{- if and .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+        # Advertise the detected public IP:P2P-port so peers can dial in.
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            export ZEBRA_NETWORK__EXTERNAL_ADDR="$(cat /shared/pubip):{{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}"
+            exec zebrad -c /etc/zebrad/zebrad.toml
+        {{- else }}
         command: ["zebrad", "-c", "/etc/zebrad/zebrad.toml"]
         args: []
+        {{- end }}
+        {{- if and .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "hostIP") }}
+        env:
+        - name: NODE_PUBLIC_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: ZEBRA_NETWORK__EXTERNAL_ADDR
+          value: "$(NODE_PUBLIC_IP):{{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}"
+        {{- else if and .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "loadBalancer") }}
+        # Advertise the LoadBalancer IP (see zebra-p2p-lb-service.yaml).
+        env:
+        - name: ZEBRA_NETWORK__EXTERNAL_ADDR
+          value: "{{ required "zebra.p2pPublic.externalIP is required when externalAddrFrom=loadBalancer" .Values.zebra.p2pPublic.externalIP }}:{{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}"
+        {{- end }}
         ports:
         - containerPort: {{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}
           name: zebra-rpc
         - containerPort: {{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}
           name: zebra-p2p
+          {{- if and .Values.zebra.p2pPublic.enabled (ne .Values.zebra.p2pPublic.externalAddrFrom "loadBalancer") }}
+          # hostPort for inbound peers; one replica per node, not on GKE Autopilot.
+          hostPort: {{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}
+          {{- end }}
         - containerPort: 8080
           name: zebra-metrics
-        {{- if or .Values.zebra.probes.readiness.enabled .Values.zebra.probes.liveness.enabled }}
+        {{- if or .Values.zebra.probes.startup.enabled .Values.zebra.probes.readiness.enabled .Values.zebra.probes.liveness.enabled }}
         - containerPort: 8081
           name: zebra-health
+        {{- end }}
+        {{- if .Values.zebra.probes.startup.enabled }}
+        # Startup gates on /healthy (process up), not /ready (synced-to-tip).
+        startupProbe:
+          httpGet:
+            path: /healthy
+            port: 8081
+          periodSeconds: {{ .Values.zebra.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.zebra.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.zebra.probes.startup.failureThreshold }}
         {{- end }}
         {{- if .Values.zebra.probes.readiness.enabled }}
         readinessProbe:
           httpGet:
             path: /ready
             port: 8081
-          initialDelaySeconds: {{ .Values.zebra.probes.readiness.initialDelaySeconds }}
           periodSeconds: {{ .Values.zebra.probes.readiness.periodSeconds }}
           timeoutSeconds: {{ .Values.zebra.probes.readiness.timeoutSeconds }}
           failureThreshold: {{ .Values.zebra.probes.readiness.failureThreshold }}
@@ -77,28 +129,27 @@ spec:
           httpGet:
             path: /healthy
             port: 8081
-          initialDelaySeconds: {{ .Values.zebra.probes.liveness.initialDelaySeconds }}
           periodSeconds: {{ .Values.zebra.probes.liveness.periodSeconds }}
           timeoutSeconds: {{ .Values.zebra.probes.liveness.timeoutSeconds }}
           failureThreshold: {{ .Values.zebra.probes.liveness.failureThreshold }}
           successThreshold: {{ .Values.zebra.probes.liveness.successThreshold }}
         {{- end }}
         volumeMounts:
+        {{- if and .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+        - name: zebra-pubip
+          mountPath: /shared
+        {{- end }}
         - name: {{ .Values.zebra.name }}-data
           mountPath: /var/cache/zebrad-cache
         - name: zebra-config
           mountPath: /etc/zebrad/
         resources:
-          requests:
-            cpu: {{ .Values.zebra.requests.cpu }}
-            memory: {{ .Values.zebra.requests.memory }}
-          {{- if .Values.zebra.limits }}
-          limits:
-            {{- if .Values.zebra.limits.memory }}
-            memory: {{ .Values.zebra.limits.memory }}
-            {{- end }}
-          {{- end }}
+          {{- toYaml .Values.zebra.resources | nindent 10 }}
       volumes:
+      {{- if and .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+      - name: zebra-pubip
+        emptyDir: {}
+      {{- end }}
       - name: zebra-config
         configMap:
           name: {{ .Values.zebra.name }}-config

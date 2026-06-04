@@ -9,7 +9,7 @@
 ---
 services:
   zcashd:
-    image: electriccoinco/zcashd:v6.3.0
+    image: electriccoinco/zcashd:6.20.0
     restart: unless-stopped
     configs:
       - source: zcashd_conf

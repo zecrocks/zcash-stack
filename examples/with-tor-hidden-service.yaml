@@ -1,12 +1,6 @@
-ingress:
-  domains:
-    - mainnet-example.your.domain
-  # Respond to all inbound requests regardless of the domain specified in SNI
-  sniCatchallEnabled: true
-
+# Zebra + lightwalletd (public, via Ingress) + zaino (exposed only over Tor).
 zebra:
   enabled: true
-  # Optionally enable this to bootstrap the blockchain from a known state faster than a full P2P sync
   initSnapshot:
     enabled: false
 
@@ -15,11 +9,18 @@ zcashd:
 
 lightwalletd:
   enabled: true
-  # Using Zebra as the RPC service
   rpcService: zebra
   volumes:
     data:
       size: 40Gi
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - mainnet-example.your.domain
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
 
 zaino:
   enabled: true
@@ -27,13 +28,16 @@ zaino:
   volumes:
     data:
       size: 40Gi
+  # Exposed via Tor below, not via a public Ingress.
+  ingress:
+    enabled: false
 
-# Enable Tor hidden service for Zaino gRPC
+# Expose Zaino's gRPC as a Tor hidden service (.onion). Useful when the cluster
+# has no public IP/domain.
 tor:
   enabled: true
   # Which service to expose through Tor: 'zaino' or 'lightwalletd'
   targetService: zaino
-  # Port that the hidden service will listen on (standard HTTP port for better compatibility)
   hiddenServicePort: 80
   volumes:
     data:
@@ -43,4 +47,4 @@ tor:
 rpc:
   credentials:
     rpcUser: changeThisPossibly
-    rpcPassword: toYourLiking123 
+    rpcPassword: toYourLiking123

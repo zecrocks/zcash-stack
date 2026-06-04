@@ -1,12 +1,11 @@
 {{- if .Values.zcashd.enabled }}
+# Headless service for stable per-replica DNS (zcashd-0.zcashd-service.<ns>.svc).
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.zcashd.name }}
+  name: {{ .Values.zcashd.name }}-service
 spec:
-  type: {{ .Values.zcashd.service.type }}
-  # ClientIP pins each consumer to one zcashd replica; set None to round-robin.
-  sessionAffinity: {{ .Values.zcashd.service.sessionAffinity | default "ClientIP" }}
+  clusterIP: None
   selector:
     app: {{ .Values.zcashd.name }}
   ports:

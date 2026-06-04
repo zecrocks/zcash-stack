@@ -1,6 +1,4 @@
-ingress:
-  enabled: false
-
+# Zcashd + block explorer (HTTP), no lightwalletd.
 zcashd:
   enabled: true
   explorer: true
@@ -10,6 +8,14 @@ zcashd:
 
 explorer:
   enabled: true
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - explorer-example.your.domain
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
   env:
     # NOTE: Override this if you want cookies to store sensitive information.
     # Generate it with Elixir and Phoenix installed: "mix phx.gen.secret"
@@ -22,4 +28,3 @@ rpc:
   credentials:
     rpcUser: change_this_usernmae
     rpcPassword: zhange_zhis_zassword
-

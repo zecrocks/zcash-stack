@@ -1,0 +1,29 @@
+{{- if and .Values.zebra.enabled .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+# Lets the zebra init container read its node's ExternalIP for ZEBRA_NETWORK__EXTERNAL_ADDR.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.zebra.name }}-noderead
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Values.zebra.name }}-noderead
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Values.zebra.name }}-noderead
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Namespace }}-{{ .Values.zebra.name }}-noderead
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.zebra.name }}-noderead
+  namespace: {{ .Release.Namespace }}
+{{- end }}

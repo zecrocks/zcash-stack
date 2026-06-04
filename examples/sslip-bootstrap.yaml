@@ -1,0 +1,34 @@
+# Bootstrap a node's TLS before branded DNS, using sslip.io.
+# sslip.io resolves an embedded IP to a hostname (203-0-113-7.sslip.io -> 203.0.113.7),
+# so cert-manager's HTTP-01 challenge validates immediately with no DNS record.
+# List the sslip.io name alongside your branded host; one cert covers both.
+# NOTE: cert renewal depends on sslip.io staying reachable; keep the branded host primary for production.
+# Replace 203-0-113-7 with this node's public IP (dashes for dots).
+zebra:
+  enabled: true
+  initSnapshot:
+    enabled: false
+
+lightwalletd:
+  rpcService: zebra
+  volumes:
+    data:
+      size: 40Gi
+  ingress:
+    enabled: true
+    # This example targets k3s Traefik; className nginx works identically.
+    # See README "TLS termination & gRPC".
+    className: traefik
+    backendProtocol: GRPC
+    hosts:
+      - mainnet-example.your.domain   # branded (primary) - point this A record here
+      - 203-0-113-7.sslip.io          # always-resolvable bootstrap/fallback
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod   # requires cert-manager + this ClusterIssuer
+
+# RPC is only accessible from within the cluster, not exposed to the internet
+rpc:
+  credentials:
+    rpcUser: changeThisPossibly
+    rpcPassword: toYourLiking123

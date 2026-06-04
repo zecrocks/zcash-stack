@@ -1,0 +1,40 @@
+# Zebra + lightwalletd on GKE Standard or GKE Autopilot.
+# Prerequisites (see chart README):
+#   - ingress-nginx installed (provisions an external L4 LoadBalancer)
+#   - cert-manager installed + examples/cluster-issuer.yaml applied
+#   - kubectl apply -f examples/storageclasses/gke-hyperdisk.yaml
+#   - DNS A record for the host below pointing at the ingress LoadBalancer IP
+
+zebra:
+  enabled: true
+  # Provisioned-IOPS class for the chain state.
+  storageClassName: zcash-chainstate-hyperdisk
+  volumes:
+    data:
+      size: 500Gi
+  # Bootstrap from a snapshot (restore is resumable).
+  initSnapshot:
+    enabled: true
+
+lightwalletd:
+  rpcService: zebra
+  # Frontend cache; default SSD is fine.
+  storageClassName: premium-rwo
+  volumes:
+    data:
+      size: 40Gi
+  # Two replicas for zero-downtime rolling updates.
+  replicas: 2
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - lwd.your.domain
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod   # use letsencrypt-staging to test first
+
+rpc:
+  credentials:
+    rpcUser: changeThisPossibly
+    rpcPassword: toYourLiking123

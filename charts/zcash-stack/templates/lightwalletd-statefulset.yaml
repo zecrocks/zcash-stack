@@ -1,4 +1,5 @@
 {{- if .Values.lightwalletd.enabled }}
+{{- $port := .Values.lightwalletd.service.port }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -6,6 +7,10 @@ metadata:
 spec:
   serviceName: {{ .Values.lightwalletd.name }}-service
   replicas: {{ .Values.lightwalletd.replicas }}
+  podManagementPolicy: {{ .Values.lightwalletd.podManagementPolicy | default "Parallel" }}
+  minReadySeconds: {{ .Values.lightwalletd.minReadySeconds | default 0 }}
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: {{ .Values.lightwalletd.name }}
@@ -14,47 +19,38 @@ spec:
       labels:
         app: {{ .Values.lightwalletd.name }}
     spec:
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 2002 "global" .Values.global) | nindent 6 }}
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.lightwalletd.topologySpread "name" .Values.lightwalletd.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
       initContainers:
-      - name: init-perms
-        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
-        command: ["/bin/sh", "-c"]
-        args:
-          - chown 2002 /srv/lightwalletd/db_volume
-        volumeMounts:
-        - name: data
-          mountPath: /srv/lightwalletd/db_volume
       {{- if .Values.lightwalletd.initSnapshot.enabled }}
-      - name: restore-snapshot
-        image: alpine:{{ .Values.global.images.alpine.tag }}@sha256:{{ .Values.global.images.alpine.hash }}
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            if [ -z "$(ls -A /data | grep -v '^lost+found$')" ]; then
-              echo "Volume is empty. Downloading and extracting snapshot...";
-              wget -qO- "{{ .Values.lightwalletd.initSnapshot.url }}" | tar --strip-components=1 -xf - -C /data
-              echo "Download and extraction complete.";
-            else
-              echo "Volume is not empty. Skipping download and extraction.";
-            fi
-            chown -R 2002 /data
-        volumeMounts:
-        - name: data
-          mountPath: /data
+      {{- include "zcash-stack.restoreInitContainer" (dict
+            "url" .Values.lightwalletd.initSnapshot.url
+            "uid" "2002"
+            "claimName" "data"
+            "doChown" (not .Values.global.fsGroup.enabled)
+            "global" .Values.global) | nindent 6 }}
+      {{- else if not .Values.global.fsGroup.enabled }}
+      {{- include "zcash-stack.setPermissionsInitContainer" (dict
+            "uid" "2002"
+            "claimName" "data"
+            "global" .Values.global) | nindent 6 }}
       {{- end }}
+      # Wait for the backend RPC node before starting lightwalletd.
       - name: init-rpc
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
         command: ['sh', '-c', "until nc -zv {{ .Values.lightwalletd.rpcService }}:{{ if .Values.zebra.enabled }}{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}{{ else }}{{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}{{ end }}; do echo waiting for rpc; sleep 2; done"]
       containers:
       - name: lightwalletd
-        image: {{ .Values.lightwalletd.image.repository }}:{{ .Values.lightwalletd.image.tag }}@sha256:{{ .Values.lightwalletd.image.hash }}
+        image: {{ .Values.lightwalletd.image.repository }}:{{ .Values.lightwalletd.image.tag }}{{ with .Values.lightwalletd.image.hash }}@sha256:{{ . }}{{ end }}
         imagePullPolicy: {{ .Values.lightwalletd.image.pullPolicy }}
         command: ["lightwalletd"]
         args:
           - --grpc-bind-addr
-          - 0.0.0.0:{{ .Values.lightwalletd.service.port }}
-          # TLS is terminated by Traefik, unencrypted traffic stays within the cluster
+          - 0.0.0.0:{{ $port }}
+          # TLS is terminated at the ingress; plaintext h2c stays within the cluster
           - --no-tls-very-insecure
-          - --zcash-conf-path 
+          - --zcash-conf-path
           - /srv/lightwalletd/conf/zcash.conf
           - --data-dir
           - /srv/lightwalletd/db_volume
@@ -67,29 +63,76 @@ spec:
           {{- with .Values.lightwalletd.additionalArgs }}
             {{- toYaml . | nindent 10 }}
           {{- end}}
+        {{- if or .Values.lightwalletd.ingest.workers .Values.lightwalletd.ingest.window .Values.lightwalletd.extraEnv }}
+        env:
+          {{- with .Values.lightwalletd.ingest.workers }}
+          # zr7+: concurrent block-prefetch workers (parallel catch-up).
+          - name: LWD_INGEST_WORKERS
+            value: {{ . | quote }}
+          {{- end }}
+          {{- with .Values.lightwalletd.ingest.window }}
+          # zr7+: blocks prefetched ahead of the commit point per round.
+          - name: LWD_INGEST_WINDOW
+            value: {{ . | quote }}
+          {{- end }}
+          {{- with .Values.lightwalletd.extraEnv }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- end }}
         ports:
-        - containerPort: 9067
+        - containerPort: {{ $port }}
           name: grpc
         volumeMounts:
         - name: data
           mountPath: /srv/lightwalletd/db_volume
         - name: config
           mountPath: /srv/lightwalletd/conf
-        readinessProbe:
+        {{- if .Values.lightwalletd.probes.startup.enabled }}
+        startupProbe:
+          {{- if eq .Values.lightwalletd.probes.startup.type "grpc" }}
+          grpc:
+            port: {{ $port }}
+          {{- else }}
           tcpSocket:
-            port: 9067
-          # TODO: lightwalletd does not yet support grpc's health check feature
-          # grpc:
-          #   port: 9067
-          # initialDelaySeconds: 10
-        resources:
-          requests:
-            cpu: {{ .Values.lightwalletd.requests.cpu }}
-            memory: {{ .Values.lightwalletd.requests.memory }}
-          {{- if .Values.lightwalletd.limits.memory }}
-          limits:
-            memory: {{ .Values.lightwalletd.limits.memory }}
+            port: {{ $port }}
           {{- end }}
+          periodSeconds: {{ .Values.lightwalletd.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.lightwalletd.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.lightwalletd.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.lightwalletd.probes.readiness.enabled }}
+        readinessProbe:
+          {{- if eq .Values.lightwalletd.probes.readiness.type "grpc" }}
+          grpc:
+            port: {{ $port }}
+          {{- else if eq .Values.lightwalletd.probes.readiness.type "exec" }}
+          exec:
+            command: ["/bin/sh", "-c", "grpcurl -plaintext -d '{}' localhost:{{ $port }} cash.z.wallet.sdk.rpc.CompactTxStreamer/GetLightdInfo > /dev/null 2>&1"]
+          {{- else }}
+          tcpSocket:
+            port: {{ $port }}
+          {{- end }}
+          periodSeconds: {{ .Values.lightwalletd.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.lightwalletd.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.lightwalletd.probes.readiness.failureThreshold }}
+          successThreshold: {{ .Values.lightwalletd.probes.readiness.successThreshold }}
+        {{- end }}
+        {{- if .Values.lightwalletd.probes.liveness.enabled }}
+        livenessProbe:
+          {{- if eq .Values.lightwalletd.probes.liveness.type "grpc" }}
+          grpc:
+            port: {{ $port }}
+          {{- else }}
+          tcpSocket:
+            port: {{ $port }}
+          {{- end }}
+          periodSeconds: {{ .Values.lightwalletd.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.lightwalletd.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.lightwalletd.probes.liveness.failureThreshold }}
+          successThreshold: {{ .Values.lightwalletd.probes.liveness.successThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.lightwalletd.resources | nindent 10 }}
       volumes:
       - name: config
         configMap:
@@ -103,4 +146,7 @@ spec:
       resources:
         requests:
           storage: {{ .Values.lightwalletd.volumes.data.size }}
+      {{- if .Values.lightwalletd.storageClassName }}
+      storageClassName: {{ .Values.lightwalletd.storageClassName }}
+      {{- end }}
 {{- end }}

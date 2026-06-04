@@ -1,12 +1,7 @@
-ingress:
-  domains:
-    - mainnet-example.your.domain
-  # Respond to all inbound requests regardless of the domain specified in SNI
-  sniCatchallEnabled: true
-
+# Zebra full node + lightwalletd on mainnet (the recommended setup).
 zebra:
   enabled: true
-  # Optionally enable this to bootstrap the blockchain from a known state faster than a full P2P sync
+  # Optionally bootstrap chain state from a snapshot (restore is safe to interrupt).
   initSnapshot:
     enabled: false
 
@@ -14,7 +9,15 @@ lightwalletd:
   rpcService: zebra
   volumes:
     data:
-      size: 10Gi
+      size: 40Gi
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - mainnet-example.your.domain   # <-- point this DNS record at your ingress LB
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod  # requires cert-manager + this ClusterIssuer
 
 # RPC is only accessible from within the cluster, not exposed to the internet
 rpc:

@@ -1,0 +1,8 @@
+{{- if .Values.lightwalletd.enabled }}
+{{- include "zcash-stack.ingress" (dict
+      "ctx" $
+      "svc" .Values.lightwalletd.ingress
+      "name" (printf "%s-%s" .Release.Name .Values.lightwalletd.name)
+      "serviceName" .Values.lightwalletd.name
+      "servicePort" .Values.lightwalletd.service.port) }}
+{{- end }}

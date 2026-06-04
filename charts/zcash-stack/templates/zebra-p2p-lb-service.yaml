@@ -1,0 +1,24 @@
+{{- if and .Values.zebra.enabled .Values.zebra.p2pPublic.enabled (eq .Values.zebra.p2pPublic.externalAddrFrom "loadBalancer") }}
+# L4 LoadBalancer for zebra's P2P port (inbound peers without hostPort).
+# Pinned to the reserved IP that zebra advertises as its external address.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zebra.name }}-p2p
+  labels:
+    app: {{ .Values.zebra.name }}
+spec:
+  type: LoadBalancer
+  # Preserve peer source IPs (matters for P2P peer reputation/eviction).
+  externalTrafficPolicy: Local
+  {{- with .Values.zebra.p2pPublic.externalIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+  selector:
+    app: {{ .Values.zebra.name }}
+  ports:
+    - name: zebra-p2p
+      protocol: TCP
+      port: {{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}
+      targetPort: {{ if .Values.zebra.testnet }}18233{{ else }}8233{{ end }}
+{{- end }}

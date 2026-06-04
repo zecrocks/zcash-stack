@@ -6,6 +6,8 @@ metadata:
 spec:
   serviceName: {{ .Values.tor.name }}-service
   replicas: 1
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: {{ .Values.tor.name }}
@@ -14,9 +16,13 @@ spec:
       labels:
         app: {{ .Values.tor.name }}
     spec:
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
       initContainers:
+      # Tor needs its hidden-service dir at 0700, which fsGroup can't do.
       - name: init-perms
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        securityContext:
+          runAsUser: 0
         command: ["/bin/sh", "-c"]
         args:
           - |
@@ -28,7 +34,7 @@ spec:
           mountPath: /var/lib/tor
       containers:
       - name: tor
-        image: {{ .Values.tor.image.repository }}:{{ .Values.tor.image.tag }}@sha256:{{ .Values.tor.image.hash }}
+        image: {{ .Values.tor.image.repository }}:{{ .Values.tor.image.tag }}{{ with .Values.tor.image.hash }}@sha256:{{ . }}{{ end }}
         imagePullPolicy: {{ .Values.tor.image.pullPolicy }}
         ports:
         - containerPort: 9050
@@ -39,6 +45,24 @@ spec:
         - name: tor-config
           mountPath: /etc/tor/torrc
           subPath: torrc
+        {{- if .Values.tor.probes.startup.enabled }}
+        startupProbe:
+          exec:
+            command: ["/bin/sh", "-c", "test -s /var/lib/tor/hidden_service/hostname"]
+          periodSeconds: {{ .Values.tor.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.tor.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.tor.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.tor.probes.liveness.enabled }}
+        livenessProbe:
+          exec:
+            command: ["/bin/sh", "-c", "pgrep -x tor > /dev/null"]
+          periodSeconds: {{ .Values.tor.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.tor.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.tor.probes.liveness.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.tor.resources | nindent 10 }}
       volumes:
       - name: tor-config
         configMap:
@@ -52,4 +76,7 @@ spec:
       resources:
         requests:
           storage: {{ .Values.tor.volumes.data.size }}
-{{- end }} 
+      {{- if .Values.tor.storageClassName }}
+      storageClassName: {{ .Values.tor.storageClassName }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,17 @@
+# k3s on dedicated NVMe hardware (the primary target for this chart).
+# k3s's default "local-path" class already gives good NVMe IOPS; leave
+# storageClassName empty to use it. This manifest is only for a second,
+# explicitly-named class pinned to a specific NVMe mount.
+# NOTE: local-path volumes are node-pinned and don't survive node loss; use
+# initSnapshot as the recovery path.
+#   1. On the node:  mkdir -p /mnt/nvme/local-path
+#   2. Point local-path-provisioner at it (local-path-config ConfigMap or --default-local-storage-path).
+#   3. kubectl apply -f k3s-local-nvme.yaml
+#   4. Reference: zebra.storageClassName: zcash-local-nvme
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: zcash-local-nvme
+provisioner: rancher.io/local-path
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain

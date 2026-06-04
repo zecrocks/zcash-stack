@@ -20,9 +20,13 @@ data:
     parallel_cpu_threads = 0
     [metrics]
     endpoint_addr = "0.0.0.0:8080"
-    {{- if or .Values.zebra.probes.readiness.enabled .Values.zebra.probes.liveness.enabled }}
+    {{- if or .Values.zebra.probes.startup.enabled .Values.zebra.probes.readiness.enabled .Values.zebra.probes.liveness.enabled }}
     [health]
     listen_addr = "0.0.0.0:8081"
+    {{- if and .Values.zebra.testnet .Values.zebra.probes.readiness.enforceOnTestnet }}
+    # Without this, /ready always returns 200 on testnet (readiness gate is a no-op).
+    enforce_on_test_networks = true
+    {{- end }}
     {{- end }}
     [tracing]
     use_color = false

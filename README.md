@@ -15,8 +15,7 @@ This repository has a simple filesystem structure. Important directories are not
 ├── charts             # <-- Kubernetes resources (Helm charts).
 ├── docker             # <-- Docker resources (Compose configurations.).
 ├── docs               # <-- Workshop lessons and documentation.
-├── examples           # <-- Example Kubernetes deployment configurations.
-└── install-traefik.sh
+└── examples           # <-- Example Kubernetes deployment configurations.
 ```
 
 ## `docs`: Workshop notes

@@ -1,39 +1,28 @@
-ingress:
-  domains:
-    - mainnet-example.your.domain
-  # Respond to all inbound requests regardless of the domain specified in SNI
-  sniCatchallEnabled: true
-
+# Run both Zebra and Zcashd as backends, with lightwalletd in front of Zebra.
 zebra:
   enabled: true
-  # Optionally enable this to bootstrap the blockchain from a known state faster than a full P2P sync
   initSnapshot:
     enabled: false
-  # image:
-  #   repository: zfnd/zebra
-  #   tag: v1.6.1
-  #   hash: 639154fe2584633821cc434f96dceab2b9047969478c651ca96ab981ca025007
 
 zcashd:
   enabled: true
-  # Optionally enable this to bootstrap the blockchain from a known state faster than a full P2P sync
   initSnapshot:
     enabled: false
-  # image:
-  #   repository: electriccoinco/zcashd
-  #   tag: v5.9.0
-  #   hash: 859be28b91592c4765783ccfea947145b3cc08902ee71ae52ef9205eaabe0194
 
 lightwalletd:
-  # Change the rpcService to "zebrad" and run "helm update" in the event that Zebra has a major issue
+  # Change rpcService to "zcashd" and run "helm upgrade" if Zebra has a major issue.
   rpcService: zebra
   volumes:
     data:
-      size: 10Gi
-  # image:
-  #   repository: electriccoinco/lightwalletd
-  #   tag: v0.4.17
-  #   hash: 906942c30d84a017e76ce72c4d59787aa5208b87a4af1b724e700f8524ab4fd1
+      size: 40Gi
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - mainnet-example.your.domain
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
 
 # RPC is only accessible from within the cluster, not exposed to the internet
 rpc:

@@ -1,0 +1,15 @@
+{{- if .Values.zebra.enabled }}
+{{- include "zcash-stack.pdb" (dict "replicas" .Values.zebra.replicas "name" .Values.zebra.name "minAvailable" .Values.zebra.pdb.minAvailable) }}
+{{- end }}
+{{- if .Values.zcashd.enabled }}
+---
+{{ include "zcash-stack.pdb" (dict "replicas" .Values.zcashd.replicas "name" .Values.zcashd.name "minAvailable" .Values.zcashd.pdb.minAvailable) }}
+{{- end }}
+{{- if .Values.lightwalletd.enabled }}
+---
+{{ include "zcash-stack.pdb" (dict "replicas" .Values.lightwalletd.replicas "name" .Values.lightwalletd.name "minAvailable" .Values.lightwalletd.pdb.minAvailable) }}
+{{- end }}
+{{- if .Values.zaino.enabled }}
+---
+{{ include "zcash-stack.pdb" (dict "replicas" .Values.zaino.replicas "name" .Values.zaino.name "minAvailable" .Values.zaino.pdb.minAvailable) }}
+{{- end }}

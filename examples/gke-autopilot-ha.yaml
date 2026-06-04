@@ -1,0 +1,36 @@
+# GKE Autopilot - high-availability values. 2 replicas per serving workload.
+# Prerequisites (see chart README):
+#   - ingress-nginx, cert-manager + examples/cluster-issuer.yaml
+#   - kubectl apply -f examples/storageclasses/gke-hyperdisk.yaml
+
+zebra:
+  enabled: true
+  replicas: 2
+  storageClassName: zcash-chainstate-hyperdisk
+  # Bootstrap each replica from a snapshot (restore is resumable).
+  initSnapshot:
+    enabled: true
+
+lightwalletd:
+  enabled: true
+  rpcService: zebra
+  replicas: 2
+  storageClassName: premium-rwo
+  volumes:
+    data:
+      size: 40Gi
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - REPLACE_WITH_YOUR_DOMAIN
+    tls:
+      enabled: true
+      # Validate with staging first (untrusted cert, generous rate limits),
+      # then switch to letsencrypt-prod.
+      clusterIssuer: letsencrypt-staging
+
+rpc:
+  credentials:
+    rpcUser: changeThisPossibly
+    rpcPassword: toYourLiking123

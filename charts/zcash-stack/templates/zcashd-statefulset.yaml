@@ -1,11 +1,15 @@
 {{- if .Values.zcashd.enabled }}
+{{- $claimName := .Values.zcashd.volumes.data.claimName | default (printf "%s-data" .Values.zcashd.name) }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Values.zcashd.name }}
 spec:
   serviceName: {{ .Values.zcashd.name }}-service
-  podManagementPolicy: {{ .Values.zcashd.podManagementPolicy }}
+  podManagementPolicy: {{ .Values.zcashd.podManagementPolicy | default "Parallel" }}
+  minReadySeconds: {{ .Values.zcashd.minReadySeconds | default 0 }}
+  updateStrategy:
+    type: RollingUpdate
   replicas: {{ .Values.zcashd.replicas }}
   selector:
     matchLabels:
@@ -15,38 +19,40 @@ spec:
       labels:
         app: {{ .Values.zcashd.name }}
     spec:
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 2001 "global" .Values.global) | nindent 6 }}
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.zcashd.topologySpread "name" .Values.zcashd.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
       initContainers:
-      {{- if .Values.zcashd.initSnapshot.enabled }}
-      - name: restore-snapshot
-        image: alpine:{{ .Values.global.images.alpine.tag }}@sha256:{{ .Values.global.images.alpine.hash }}
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            SNAPSHOT_URL="{{- if .Values.zcashd.explorer }}{{ .Values.zcashd.initSnapshot.explorer_url }}{{- else }}{{ .Values.zcashd.initSnapshot.url }}{{- end }}"
-            if [ -z "$(ls -A /data | grep -v '^lost+found$')" ]; then
-              echo "Volume is empty. Downloading and extracting snapshot...";
-              wget -qO- "$SNAPSHOT_URL" | tar --strip-components=1 -xvf - -C /data
-              echo "Download and extraction complete.";
-            else
-              echo "Volume is not empty. Skipping download and extraction.";
-            fi
-            chown -R 2001 /data
-        volumeMounts:
-        - name: {{ .Values.zcashd.volumes.data.claimName | default (printf "%s-data" (.Values.zcashd.name)) }}
-          mountPath: /data
-      {{- else }}
-      - name: set-permissions
+      {{- if .Values.zcashd.clearBanlist }}
+      # Wipe banlist.dat on start so stale peer bans don't carry forward.
+      - name: clear-banlist
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        securityContext:
+          runAsUser: 0
         command: ["/bin/sh", "-c"]
         args:
-          - chown -R 2001 /data
+          - 'echo "clearing zcashd banlist"; rm -f /data/banlist.dat /data/banlist.json; echo done'
         volumeMounts:
-        - name: {{ .Values.zcashd.volumes.data.claimName | default (printf "%s-data" (.Values.zcashd.name)) }}
+        - name: {{ $claimName }}
           mountPath: /data
+      {{- end }}
+      {{- if .Values.zcashd.initSnapshot.enabled }}
+      {{- $url := ternary .Values.zcashd.initSnapshot.explorer_url .Values.zcashd.initSnapshot.url .Values.zcashd.explorer }}
+      {{- include "zcash-stack.restoreInitContainer" (dict
+            "url" $url
+            "uid" "2001"
+            "claimName" $claimName
+            "doChown" (not .Values.global.fsGroup.enabled)
+            "global" .Values.global) | nindent 6 }}
+      {{- else if not .Values.global.fsGroup.enabled }}
+      {{- include "zcash-stack.setPermissionsInitContainer" (dict
+            "uid" "2001"
+            "claimName" $claimName
+            "global" .Values.global) | nindent 6 }}
       {{- end }}
       containers:
       - name: zcashd
-        image: {{ .Values.zcashd.image.repository }}:{{ .Values.zcashd.image.tag }}@sha256:{{ .Values.zcashd.image.hash }}
+        image: {{ .Values.zcashd.image.repository }}:{{ .Values.zcashd.image.tag }}{{ with .Values.zcashd.image.hash }}@sha256:{{ . }}{{ end }}
         imagePullPolicy: {{ .Values.zcashd.image.pullPolicy }}
         command: ["zcashd"]
         args:
@@ -61,6 +67,19 @@ spec:
           {{- with .Values.zcashd.additionalArgs }}
             {{- toYaml . | nindent 10 }}
           {{- end}}
+        {{- if .Values.zcashd.probes.startup.enabled }}
+        startupProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - |
+              zcash-cli -conf=/srv/zcashd/conf/zcashd.conf getblockchaininfo > /dev/null 2>&1
+          periodSeconds: {{ .Values.zcashd.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.zcashd.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.zcashd.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.zcashd.probes.readiness.enabled }}
         readinessProbe:
           exec:
             command:
@@ -68,38 +87,44 @@ spec:
             - -c
             - |
               zcash-cli -conf=/srv/zcashd/conf/zcashd.conf getblockchaininfo > /dev/null 2>&1
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 3
+          periodSeconds: {{ .Values.zcashd.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zcashd.probes.readiness.timeoutSeconds }}
+          successThreshold: {{ .Values.zcashd.probes.readiness.successThreshold }}
+          failureThreshold: {{ .Values.zcashd.probes.readiness.failureThreshold }}
+        {{- end }}
+        {{- if .Values.zcashd.probes.liveness.enabled }}
+        livenessProbe:
+          # getinfo is cheaper than getblockchaininfo; won't fail during reindex.
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - |
+              zcash-cli -conf=/srv/zcashd/conf/zcashd.conf getinfo > /dev/null 2>&1
+          periodSeconds: {{ .Values.zcashd.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zcashd.probes.liveness.timeoutSeconds }}
+          successThreshold: {{ .Values.zcashd.probes.liveness.successThreshold }}
+          failureThreshold: {{ .Values.zcashd.probes.liveness.failureThreshold }}
+        {{- end }}
         ports:
         - containerPort: {{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}
           name: zcashd-rpc
         - containerPort: {{ if .Values.zcashd.testnet }}18233{{ else }}8233{{ end }}
           name: zcashd-p2p
         volumeMounts:
-        - name: {{ .Values.zcashd.volumes.data.claimName | default (printf "%s-data" (.Values.zcashd.name)) }}
+        - name: {{ $claimName }}
           mountPath: /srv/zcashd/.zcash
         - name: zcash-config
           mountPath: /srv/zcashd/conf
         resources:
-          requests:
-            cpu: {{ .Values.zcashd.requests.cpu }}
-            memory: {{ .Values.zcashd.requests.memory }}
-          {{- if .Values.zcashd.limits }}
-          limits:
-            {{- if .Values.zcashd.limits.memory }}
-            memory: {{ .Values.zcashd.limits.memory }}
-            {{- end }}
-          {{- end }}
+          {{- toYaml .Values.zcashd.resources | nindent 10 }}
       volumes:
       - name: zcash-config
         configMap:
           name: {{ .Values.zcashd.name }}-config
   volumeClaimTemplates:
   - metadata:
-      name: {{ .Values.zcashd.volumes.data.claimName | default (printf "%s-data" (.Values.zcashd.name)) }}
+      name: {{ $claimName }}
     spec:
       accessModes:
         - ReadWriteOnce

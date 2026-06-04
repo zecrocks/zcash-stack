@@ -5,6 +5,11 @@ metadata:
   name: {{ .Values.explorer.name }}
 spec:
   replicas: {{ .Values.explorer.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: {{ .Values.explorer.name }}
@@ -13,21 +18,44 @@ spec:
       labels:
         app: {{ .Values.explorer.name }}
     spec:
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.explorer.topologySpread "name" .Values.explorer.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
       containers:
         - name: explorer
-          image: {{ .Values.explorer.image.repository }}:{{ .Values.explorer.image.tag }}@sha256:{{ .Values.explorer.image.hash }}
+          image: {{ .Values.explorer.image.repository }}:{{ .Values.explorer.image.tag }}{{ with .Values.explorer.image.hash }}@sha256:{{ . }}{{ end }}
           imagePullPolicy: {{ .Values.explorer.image.pullPolicy }}
           ports:
             - containerPort: 4000
               name: explorer-http
+          {{- if .Values.explorer.probes.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: /
+              port: explorer-http
+            periodSeconds: {{ .Values.explorer.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.explorer.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.explorer.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if .Values.explorer.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: explorer-http
+            periodSeconds: {{ .Values.explorer.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.explorer.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.explorer.probes.readiness.failureThreshold }}
+            successThreshold: {{ .Values.explorer.probes.readiness.successThreshold }}
+          {{- end }}
+          {{- if .Values.explorer.probes.liveness.enabled }}
           livenessProbe:
             httpGet:
               path: /
               port: explorer-http
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
+            periodSeconds: {{ .Values.explorer.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.explorer.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.explorer.probes.liveness.failureThreshold }}
+            successThreshold: {{ .Values.explorer.probes.liveness.successThreshold }}
+          {{- end }}
           env:
             - name: EXPLORER_HOSTNAME
               value: "{{ .Values.explorer.hostname }}"
@@ -44,10 +72,5 @@ spec:
               value: "{{ $value }}"
           {{- end }}
           resources:
-            limits:
-              cpu: {{ .Values.explorer.resources.limits.cpu }}
-              memory: {{ .Values.explorer.resources.limits.memory }}
-            requests:
-              cpu: {{ .Values.explorer.resources.requests.cpu }}
-              memory: {{ .Values.explorer.resources.requests.memory }}
+            {{- toYaml .Values.explorer.resources | nindent 12 }}
 {{- end }}

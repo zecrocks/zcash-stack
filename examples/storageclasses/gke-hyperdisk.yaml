@@ -1,0 +1,17 @@
+# Provisioned-IOPS StorageClass for chain state on GKE (Hyperdisk Balanced).
+# Apply once:  kubectl apply -f gke-hyperdisk.yaml
+# Reference:   zebra.storageClassName: zcash-chainstate-hyperdisk
+# Requires a Hyperdisk-capable machine family (most N4/C3/C4); else use gke-pdssd.yaml.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: zcash-chainstate-hyperdisk
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: WaitForFirstConsumer   # create the disk in the pod's zone
+allowVolumeExpansion: true                # grow with chain growth, no recreate
+reclaimPolicy: Retain                     # do NOT destroy a multi-day sync on PVC delete
+parameters:
+  type: hyperdisk-balanced
+  # Tuned high for initial sync; lower after sync to cut cost.
+  provisioned-iops-on-create: "12000"
+  provisioned-throughput-on-create: "400Mi"   # MiB/s

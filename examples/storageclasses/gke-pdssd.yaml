@@ -1,0 +1,14 @@
+# pd-ssd StorageClass for chain state on GKE without Hyperdisk.
+# pd-ssd IOPS scale with disk size; prefer Hyperdisk (gke-hyperdisk.yaml) where available.
+# Apply once:  kubectl apply -f gke-pdssd.yaml
+# Reference:   zebra.storageClassName: zcash-chainstate-pdssd
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: zcash-chainstate-pdssd
+provisioner: pd.csi.storage.gke.io
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Retain
+parameters:
+  type: pd-ssd

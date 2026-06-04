@@ -1,4 +1,5 @@
 {{- if .Values.zaino.enabled }}
+{{- $port := .Values.zaino.service.port }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -6,6 +7,10 @@ metadata:
 spec:
   serviceName: {{ .Values.zaino.name }}-service
   replicas: {{ .Values.zaino.replicas }}
+  podManagementPolicy: {{ .Values.zaino.podManagementPolicy | default "Parallel" }}
+  minReadySeconds: {{ .Values.zaino.minReadySeconds | default 0 }}
+  updateStrategy:
+    type: RollingUpdate
   selector:
     matchLabels:
       app: {{ .Values.zaino.name }}
@@ -14,9 +19,15 @@ spec:
       labels:
         app: {{ .Values.zaino.name }}
     spec:
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 2003 "global" .Values.global) | nindent 6 }}
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.zaino.topologySpread "name" .Values.zaino.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
       initContainers:
+      {{- if not .Values.global.fsGroup.enabled }}
       - name: init-perms
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        securityContext:
+          runAsUser: 0
         command: ["/bin/sh", "-c"]
         args:
           - |
@@ -25,12 +36,13 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /home/zaino/.cache/zaino
+      {{- end }}
       - name: init-rpc
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
         command: ['sh', '-c', "until nc -zv {{ .Values.zaino.rpcService }}:{{ if .Values.zebra.enabled }}{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}{{ else }}{{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}{{ end }}; do echo waiting for rpc; sleep 2; done"]
       containers:
       - name: zaino
-        image: {{ .Values.zaino.image.repository }}:{{ .Values.zaino.image.tag }}@sha256:{{ .Values.zaino.image.hash }}
+        image: {{ .Values.zaino.image.repository }}:{{ .Values.zaino.image.tag }}{{ with .Values.zaino.image.hash }}@sha256:{{ . }}{{ end }}
         imagePullPolicy: {{ .Values.zaino.image.pullPolicy }}
         command: ["/app/zainod"]
         args:
@@ -40,26 +52,56 @@ spec:
             {{- toYaml . | nindent 10 }}
           {{- end}}
         ports:
-        - containerPort: 8137
+        - containerPort: {{ $port }}
           name: grpc
         volumeMounts:
         - name: data
           mountPath: /home/zaino/.cache/zaino
         - name: config
           mountPath: /etc/zaino
-        readinessProbe:
+        {{- if .Values.zaino.probes.startup.enabled }}
+        startupProbe:
+          {{- if eq .Values.zaino.probes.startup.type "grpc" }}
+          grpc:
+            port: {{ $port }}
+          {{- else }}
           tcpSocket:
-            port: 8137
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        resources:
-          requests:
-            cpu: {{ .Values.zaino.requests.cpu }}
-            memory: {{ .Values.zaino.requests.memory }}
-          {{- if .Values.zaino.limits.memory }}
-          limits:
-            memory: {{ .Values.zaino.limits.memory }}
+            port: {{ $port }}
           {{- end }}
+          periodSeconds: {{ .Values.zaino.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.zaino.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.zaino.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.zaino.probes.readiness.enabled }}
+        readinessProbe:
+          {{- if eq .Values.zaino.probes.readiness.type "grpc" }}
+          grpc:
+            port: {{ $port }}
+          {{- else }}
+          tcpSocket:
+            port: {{ $port }}
+          {{- end }}
+          periodSeconds: {{ .Values.zaino.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zaino.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zaino.probes.readiness.failureThreshold }}
+          successThreshold: {{ .Values.zaino.probes.readiness.successThreshold }}
+        {{- end }}
+        {{- if .Values.zaino.probes.liveness.enabled }}
+        livenessProbe:
+          {{- if eq .Values.zaino.probes.liveness.type "grpc" }}
+          grpc:
+            port: {{ $port }}
+          {{- else }}
+          tcpSocket:
+            port: {{ $port }}
+          {{- end }}
+          periodSeconds: {{ .Values.zaino.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zaino.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zaino.probes.liveness.failureThreshold }}
+          successThreshold: {{ .Values.zaino.probes.liveness.successThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.zaino.resources | nindent 10 }}
       volumes:
       - name: config
         configMap:
@@ -73,4 +115,7 @@ spec:
       resources:
         requests:
           storage: {{ .Values.zaino.volumes.data.size }}
-{{- end }} 
+      {{- if .Values.zaino.storageClassName }}
+      storageClassName: {{ .Values.zaino.storageClassName }}
+      {{- end }}
+{{- end }}

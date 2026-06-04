@@ -1,6 +1,50 @@
-{{ if .Values.tor.enabled }}
-===================================================
+Thanks for installing {{ .Chart.Name }} {{ .Chart.Version }}.
+
+{{- if .Values.lightwalletd.enabled }}
+
+Lightwalletd (gRPC) is deployed.
+{{- if and .Values.lightwalletd.ingress.enabled .Values.lightwalletd.ingress.hosts }}
+  Reachable over TLS at:
+  {{- range .Values.lightwalletd.ingress.hosts }}
+    - {{ . }}:443 (gRPC)
+  {{- end }}
+  Point DNS at the ingress IP/hostname. cert-manager issues certs automatically.
+  Check the LoadBalancer address:
+    kubectl get svc -A -l app.kubernetes.io/name=ingress-nginx
+  Test the endpoint (needs grpcurl):
+    grpcurl {{ index .Values.lightwalletd.ingress.hosts 0 }}:443 cash.z.wallet.sdk.rpc.CompactTxStreamer/GetLightdInfo
+{{- else }}
+  No ingress hosts configured - lightwalletd is only reachable inside the cluster
+  on Service "{{ .Values.lightwalletd.name }}:{{ .Values.lightwalletd.service.port }}".
+{{- end }}
+{{- end }}
+
+{{- if .Values.zaino.enabled }}
+
+Zaino (gRPC) is deployed.
+{{- if and .Values.zaino.ingress.enabled .Values.zaino.ingress.hosts }}
+  Reachable over TLS at:
+  {{- range .Values.zaino.ingress.hosts }}
+    - {{ . }}:443 (gRPC)
+  {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if and .Values.explorer.enabled .Values.explorer.ingress.enabled .Values.explorer.ingress.hosts }}
+
+Block explorer (HTTP) is reachable at:
+{{- range .Values.explorer.ingress.hosts }}
+  - https://{{ . }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.tor.enabled }}
+
 The Tor hidden service address can be found by running:
 kubectl exec -it {{ .Values.tor.name }}-0 -- cat /var/lib/tor/hidden_service/hostname
-===================================================
-{{ end }}
+{{- end }}
+
+Useful commands:
+  kubectl get pods
+  kubectl logs -f statefulset/{{ .Values.lightwalletd.name }}
+  kubectl rollout status statefulset/{{ .Values.lightwalletd.name }}

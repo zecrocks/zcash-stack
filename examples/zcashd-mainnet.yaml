@@ -1,10 +1,6 @@
-ingress:
-  domains:
-    - mainnet-example.your.domain
-
+# Zcashd full node + lightwalletd on mainnet.
 zcashd:
   enabled: true
-  # Optionally enable this to bootstrap the blockchain from a known state faster than a full P2P sync
   initSnapshot:
     enabled: false
 
@@ -13,6 +9,14 @@ zebra:
 
 lightwalletd:
   rpcService: zcashd
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - mainnet-example.your.domain
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
 
 # RPC is only accessible from within the cluster, not exposed to the internet
 rpc:

@@ -1,0 +1,8 @@
+{{- if .Values.explorer.enabled }}
+{{- include "zcash-stack.ingress" (dict
+      "ctx" $
+      "svc" .Values.explorer.ingress
+      "name" (printf "%s-%s" .Release.Name .Values.explorer.name)
+      "serviceName" .Values.explorer.name
+      "servicePort" .Values.explorer.service.port) }}
+{{- end }}

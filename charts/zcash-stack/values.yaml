@@ -1,7 +1,45 @@
-ingress:
-  enabled: true
-  domains: []
-  sniCatchallEnabled: false
+# Default values for the zcash-stack chart.
+
+global:
+  # Pre-created pull secret(s) for private registries, merged into every pod.
+  imagePullSecrets: []
+  #  - regcred
+
+  # Set volume ownership via fsGroup instead of a root chown init container.
+  # tor is excluded (its hidden-service dir must be mode 0700, which fsGroup can't set).
+  fsGroup:
+    enabled: true
+  images:
+    busybox:
+      tag: latest
+      hash: 4be429a5fbb2e71ae7958bfa558bc637cf3a61baf40a708cb8fff532b39e52d0
+    alpine:
+      tag: latest
+      hash: c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b
+    # Used by zebra.p2pPublic externalAddrFrom: nodeExternalIP.
+    kubectl:
+      repository: rancher/kubectl
+      tag: v1.31.1
+    # Used by the snapshot init container only for gs:// URLs (gsutil streaming).
+    cloudSdk:
+      repository: gcr.io/google.com/cloudsdktool/cloud-sdk
+      tag: slim
+      hash: f6f0c385dbadb0f28e6632efca3139b70d52192399540d3f7c28c530cdef8964
+
+# Optionally have the chart create the registry pull secret. Use an access token.
+imageCredentials:
+  enabled: false
+  name: regcred
+  registry: https://index.docker.io/v1/
+  username: ""
+  password: ""
+  email: ""
+
+# RPC credentials for lightwalletd / zaino / explorer to reach the backend node.
+rpc:
+  credentials:
+    rpcUser: 100ZECS
+    rpcPassword: h3hqw3eRHcoqwirhOCQWHEr2OC
 
 zebra:
   enabled: false
@@ -12,33 +50,73 @@ zebra:
     tag: 5.0.0
     hash: fddeeb27037eac2a77a8049df2dc939128c7011fa4687a0389ad945998cb42c4
     pullPolicy: IfNotPresent
+
+  # Each replica is a full node with its own PVC. Scale for redundancy, not load.
   replicas: 1
+  podManagementPolicy: Parallel
+  minReadySeconds: 30
+  pdb:
+    minAvailable: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+
   initSnapshot:
+    # Restore chain state from a snapshot tar. URL scheme picks the downloader:
+    # gs:// uses gsutil (cloud-sdk image), https:// uses wget (alpine). The tar must
+    # have a single top-level dir (extracted with --strip-components=1).
     enabled: false
     url: https://link.storjshare.io/s/jvwzyxteyqlmbfayt6jgmhaaus3a/nodedumps/zec/zebra-2025-09-12.tar?download=1
+
   additionalEnv: {}
+
+  # Accept inbound P2P via hostPort (one replica per node; not on GKE Autopilot).
+  p2pPublic:
+    enabled: false
+    # hostIP | nodeExternalIP | loadBalancer (see README).
+    externalAddrFrom: hostIP
+    # Required when externalAddrFrom: loadBalancer.
+    externalIP: ""
+
+  # "" uses the cluster default StorageClass. Immutable on an existing StatefulSet.
+  storageClassName: ""
   volumes:
     data:
-      size: 400Gi
+      size: 500Gi
+
   service:
     type: ClusterIP
-  requests: {}
-  # requests:
-  #   cpu: 2
-  #   memory: 4Gi
-  # limits:
-  #   memory: 16Gi
+    # Pin each lightwalletd to one replica's chain state (None = round-robin).
+    sessionAffinity: ClientIP
+
+  # CPU request kept at 350m to satisfy Autopilot's mem:CPU ratio at 2Gi mem.
+  # CPU limit omitted so zebra can burst during sync.
+  resources:
+    requests:
+      cpu: 350m
+      memory: 2Gi
+    limits:
+      memory: 8Gi
+
+  # zebra serves /ready and /healthy on :8081.
   probes:
+    startup:
+      # Long budget so liveness can't kill a node during initial sync.
+      enabled: true
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 240
     readiness:
       enabled: true
-      initialDelaySeconds: 30
+      # zebrad /ready returns 200 on testnet unless this is set; keep true so the
+      # gate also applies on testnet. No effect when testnet=false.
+      enforceOnTestnet: true
       periodSeconds: 10
       timeoutSeconds: 5
       failureThreshold: 3
       successThreshold: 1
     liveness:
       enabled: true
-      initialDelaySeconds: 90
       periodSeconds: 30
       timeoutSeconds: 10
       failureThreshold: 3
@@ -50,88 +128,218 @@ zcashd:
   testnet: false
   image:
     repository: electriccoinco/zcashd
-    tag: 6.20.0
+    tag: "6.20.0"
     hash: 745098bbec91b7d0ae013c44bcd2400b660b3c7ad80935396df4848af529bfc0
     pullPolicy: IfNotPresent
+
   replicas: 1
   podManagementPolicy: Parallel
+  minReadySeconds: 30
+  pdb:
+    minAvailable: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+
   initSnapshot:
     enabled: false
     url: ""
     explorer_url: ""
   reindex: false
+  # Wipe persisted banlist on start (zcashd persists peer bans, zebra does not).
+  clearBanlist: false
   lightwalletd: true
   explorer: false
   wallet: false
   nodes:
    - mainnet.z.cash
   additionalArgs: []
+
+  storageClassName: ""
   volumes:
     data:
-      size: 400Gi
+      size: 500Gi
+      # claimName: zcashd-data   # optional override for the PVC name
+
   service:
     type: ClusterIP
-  requests:
-    cpu: 1
-    memory: 1.5Gi
-  limits:
-    memory: 10Gi
+    # Pin each lightwalletd to one replica's chain state (None = round-robin).
+    sessionAffinity: ClientIP
+
+  resources:
+    requests:
+      cpu: 350m
+      memory: 2Gi
+    limits:
+      memory: 10Gi
+
+  probes:
+    startup:
+      enabled: true
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 240
+    readiness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 5
+      successThreshold: 1
+
   mine: false
   mining_address:
   genproclimit: 1
   exportdir: /tmp
 
-rpc:
-  credentials:
-    rpcUser: 100ZECS
-    rpcPassword: h3hqw3eRHcoqwirhOCQWHEr2OC
-
 lightwalletd:
   enabled: true
   name: lightwalletd
+  # Which backend RPC Service to use ("zebra" or "zcashd").
   rpcService: zebra
   donationAddress:
   image:
-    repository: electriccoinco/lightwalletd
-    tag: v0.4.19
-    hash: a3dfb04b4054b78ae3107dcc804c3a15a6e38d1f0dfcadeac48da482dd1d3448
+    # emersonian/zcash-lwd is a public fork: pooled RPC client + parallel ingestor,
+    # much faster block catch-up than stock v0.4.19.
+    # EDGE CONTRACT: this backend must answer non-gRPC `OPTIONS /` with 415 and
+    # /healthz with 200/503 (the Fly HAProxy edge health-checks `expect 415`).
+    # Don't add a website / change the 415 response here while an HAProxy edge checks it.
+    repository: emersonian/zcash-lwd
+    tag: v0.4.19-zr8
+    hash: e94c4cc637c3a3f6f18924f7f4240ae7c77dbb8a5345204187a144ada578d49e
     pullPolicy: IfNotPresent
+
+  # Parallel ingestor tuning (env vars). Empty = binary defaults (workers=8, window=64).
+  # Raise workers on big backends (e.g. 24 on the 64-core boxes).
+  ingest:
+    workers:   # e.g. 24
+    window:    # e.g. 128
+  # Extra env vars for the container (list of {name,value}).
+  extraEnv: []
+
+  # Set replicas to 2+ for zero-downtime rolling updates (each gets its own cache
+  # PVC; the PDB keeps one available; the ingress load-balances gRPC across pods).
   replicas: 1
+  podManagementPolicy: Parallel
+  minReadySeconds: 15
+  pdb:
+    minAvailable: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+
   initSnapshot:
     enabled: false
     url: https://link.storjshare.io/s/jvfegr7l7gwgcsvdml5lazlnypdq/nodedumps/zec/lwd/2024-03-26.tar?download=1
   additionalArgs: []
+
+  storageClassName: ""
   volumes:
     data:
       size: 40Gi
+
   service:
     type: ClusterIP
     port: 9067
-  requests:
-    cpu: 0.5
-    memory: 512Mi
-  limits:
-    memory: 3Gi
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 3Gi
+
+  # Defaults to a TCP check on the gRPC port. Set type: grpc once the build exposes
+  # grpc.health.v1, or type: exec for a GetLightdInfo check (needs grpcurl in image).
+  probes:
+    startup:
+      enabled: true
+      type: tcpSocket          # tcpSocket | grpc
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 60
+    readiness:
+      enabled: true
+      type: tcpSocket          # tcpSocket | grpc | exec
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      type: tcpSocket          # tcpSocket | grpc
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+
+  # TLS + host routing via Ingress. All hosts route to this one Service.
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - lwd.example.com
+      # No DNS yet? A sslip.io name (e.g. 203-0-113-7.sslip.io) lets HTTP-01 validate
+      # before branded DNS exists. See README.
+    path: /
+    pathType: Prefix
+    # On Traefik, GRPC makes the chart emit a Traefik IngressRoute (h2c) + Certificate.
+    backendProtocol: GRPC
+    annotations: {}
+    tls:
+      enabled: true
+      # cert-manager: leave secretName empty and set clusterIssuer.
+      clusterIssuer: letsencrypt-prod
+      # bring-your-own: set secretName to a pre-created tls Secret (clusterIssuer ignored).
+      secretName: ""
+      # Turn off only if a cert-manager HTTP-01 challenge fails on first issuance.
+      sslRedirect: "true"
 
 explorer:
   enabled: false
   name: explorer
   replicas: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
   image:
     repository: emersonian/zcash-explorer
     tag: v0.0.6
     hash: ff583282563a566c09d004cd4bdf2f30edd32497a3a98eec40df1da130a69df9
     pullPolicy: IfNotPresent
+  hostname: ""
   service:
     type: ClusterIP
     port: 4000
   resources:
-    limits:
-      cpu: "1"
-      memory: "3072Mi"
     requests:
-      cpu: "0.1"
-      memory: "512Mi"
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 3072Mi
+  probes:
+    startup:
+      enabled: true
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 30
+    readiness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
   env:
     # NOTE: Override this if you want cookies to store sensitive information.
     # Generate it with Elixir and Phoenix installed: "mix phx.gen.secret"
@@ -140,31 +348,78 @@ explorer:
     EXPLORER_PORT: "4000"
     ZCASH_NETWORK: mainnet
     zcash_network: mainnet
+  ingress:
+    enabled: false
+    className: nginx
+    hosts:
+      - explorer.example.com
+    path: /
+    pathType: Prefix
+    backendProtocol: HTTP
+    annotations: {}
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: ""
+      sslRedirect: "true"
 
 zaino:
   enabled: false
   name: zaino
-  ingress:
-    enabled: true
-    domains: []
+  rpcService: zebra
   image:
     repository: emersonian/zcash-zaino
     tag: 0.1.2-zr4
     hash: 9965cc15e018c2c8cc3d3ce708717f25191f00cb7175f3eb35cb1bfd993fc7d5
     pullPolicy: IfNotPresent
+
   replicas: 1
-  rpcService: zebra
+  podManagementPolicy: Parallel
+  minReadySeconds: 15
+  pdb:
+    minAvailable: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+
+  storageClassName: ""
   volumes:
     data:
       size: 40Gi
+
   service:
     type: ClusterIP
     port: 8137
-  requests:
-    cpu: 0.5
-    memory: 512Mi
-  limits:
-    memory: 6Gi
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      memory: 6Gi
+
+  probes:
+    startup:
+      enabled: true
+      type: tcpSocket          # tcpSocket | grpc
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 60
+    readiness:
+      enabled: true
+      type: tcpSocket          # tcpSocket | grpc
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      type: tcpSocket          # tcpSocket | grpc
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 5
+      successThreshold: 1
+
   additionalArgs: []
   config:
     dbSize: 64
@@ -172,6 +427,23 @@ zaino:
     noDB: false
     noState: false
 
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - zaino.example.com
+    path: /
+    pathType: Prefix
+    backendProtocol: GRPC
+    annotations: {}
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: ""
+      sslRedirect: "true"
+
+# Optional hidden service exposing lightwalletd/zaino over .onion. tor keeps a root
+# chown/chmod init container (hidden-service dir must be 0700) and skips fsGroup.
 tor:
   enabled: false
   name: tor
@@ -182,16 +454,28 @@ tor:
     tag: 0.4.8.21
     hash: 169c83b402723ec5897640af107f98e9627456ec0305c96978668c5a97ff1a45
     pullPolicy: Always
+
+  storageClassName: ""
   volumes:
     data:
       size: 1Gi
 
-global:
-  # TODO: minimum volume size (Vultr is 40Gi for HDD, 10Gi for SSD), backport this to Thorchain and Maya
-  images:
-    busybox:
-      tag: latest
-      hash: 4be429a5fbb2e71ae7958bfa558bc637cf3a61baf40a708cb8fff532b39e52d0
-    alpine:
-      tag: latest
-      hash: c5b1261d6d3e43071626931fc004f70149baeba2c8ec672bd4f27761f8e1ad6b
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 512Mi
+
+  # Probes are opt-in; tor has no HTTP/health endpoint and may lack pgrep.
+  probes:
+    startup:
+      enabled: false
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 30
+    liveness:
+      enabled: false
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3

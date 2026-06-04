@@ -1,32 +1,33 @@
-ingress:
-  domains:
-    - testnet-example.your.domain
-  # Respond to all inbound requests regardless of the domain specified in SNI
-  sniCatchallEnabled: true
-
+# Zebra full node + lightwalletd on testnet.
 zebra:
   enabled: true
   testnet: true
   volumes:
     data:
       size: 50Gi
-  # Optionally enable this to bootstrap the blockchain from a known state faster than a full P2P sync
   initSnapshot:
     enabled: false
     url: https://link.storjshare.io/s/jvbcllf2rpohtqhwiget5pkcvyca/nodedumps/zec/zebra-testnet-2024-04-22.tar?download=1
+
+zcashd:
+  enabled: false
 
 lightwalletd:
   rpcService: zebra
   volumes:
     data:
-      # Vultr's minimum magnetic storage size is 40Gi, adjust this to 10Gi if you are not using Vultr
       size: 40Gi
-  # Optionally enable gRPC logging for troubleshooting. User IPs will not be visible, internal k8s IPs will be shown.
+  ingress:
+    enabled: true
+    className: nginx
+    hosts:
+      - testnet-example.your.domain
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+  # Optionally enable gRPC logging for troubleshooting. User IPs will not be visible.
   # additionalArgs:
   #   - --grpc-logging-insecure
-
-zcashd:
-  enabled: false
 
 # RPC is only accessible from within the cluster, not exposed to the internet
 rpc:
