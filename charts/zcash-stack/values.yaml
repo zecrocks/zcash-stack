@@ -66,7 +66,7 @@ zebra:
     # gs:// uses gsutil (cloud-sdk image), https:// uses wget (alpine). The tar must
     # have a single top-level dir (extracted with --strip-components=1).
     enabled: false
-    url: https://link.storjshare.io/s/jvwzyxteyqlmbfayt6jgmhaaus3a/nodedumps/zec/zebra-2025-09-12.tar?download=1
+    url: https://link.storjshare.io/s/jvsl24cnnc6o5xhd2zqn5svvuwda/snapshots/zebra/zebra-2026-06-03.tar?download=1
 
   additionalEnv: {}
 
