@@ -20,12 +20,12 @@ echo "Ensuring download directory '${download_dir}' exists..."
 mkdir -p "$download_dir"
 
 is_empty() {
-  [ -z "$(ls -A "$download_dir" 2>/dev/null | grep -v '^lost+found$' || true)" ]
+  [ -z "$(ls -A "$download_dir" 2>/dev/null | grep -vE '^(lost\+found|\.gitkeep)$' || true)" ]
 }
 
 restore() {
   echo "Downloading blockchain snapshot from $snapshot_url to speed up sync time..."
-  find "$download_dir" -mindepth 1 -maxdepth 1 ! -name 'lost+found' -exec rm -rf {} +
+  find "$download_dir" -mindepth 1 -maxdepth 1 ! -name 'lost+found' ! -name '.gitkeep' -exec rm -rf {} +
   : > "$inprogress"
   wget -qO- "$snapshot_url" | tar --strip-components=1 -xf - -C "$download_dir"
   rm -f "$inprogress"
