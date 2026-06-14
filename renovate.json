@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommitsDisabled"
+  ],
+  "timezone": "America/Chicago",
+  "schedule": ["at any time"],
+  "labels": ["dependencies", "docker"],
+  "packageRules": [
+    {
+      "description": "Group the core Zcash node container images into one PR",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "zfnd/zebra",
+        "electriccoinco/zcashd",
+        "electriccoinco/lightwalletd"
+      ],
+      "groupName": "zcash node container images"
+    },
+    {
+      "description": "Don't touch images intentionally pinned to :latest (busybox init, etc.)",
+      "matchCurrentValue": "/^latest$/",
+      "enabled": false
+    }
+  ]
+}
