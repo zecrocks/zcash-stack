@@ -47,8 +47,8 @@ zebra:
   testnet: false
   image:
     repository: zfnd/zebra
-    tag: 5.1.1
-    hash: 5870614fdb7c089f281ca33ef8f1ff7998f59fa60fecae19462a4c8e9a37fc6e
+    tag: 5.2.0
+    hash: 477e65add4dacf52074ba04da8d763c89c26cc57f911dba2127401f8e1da597d
     pullPolicy: IfNotPresent
 
   # Each replica is a full node with its own PVC. Scale for redundancy, not load.
