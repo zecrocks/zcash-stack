@@ -15,6 +15,9 @@ spec:
       app: {{ .Values.zebra.name }}
   template:
     metadata:
+      annotations:
+        # Roll the pod when zebrad.toml changes (zebra reads config only at startup).
+        checksum/config: {{ include (print $.Template.BasePath "/zebra-configmap.yaml") . | sha256sum }}
       labels:
         app: {{ .Values.zebra.name }}
     spec:

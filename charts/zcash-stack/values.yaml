@@ -78,6 +78,12 @@ zebra:
     # Required when externalAddrFrom: loadBalancer.
     externalIP: ""
 
+  # Initial peers for zebra's peerset. Rendered to initial_{mainnet,testnet}_peers per
+  # the active network. NOTE: this REPLACES zebra's default DNS seeders, it does not add
+  # to them - include the seeders in the list if you still want them. Empty = use zebra's
+  # built-in defaults. host:port strings, e.g. "1.2.3.4:8233".
+  initialPeers: []
+
   # "" uses the cluster default StorageClass. Immutable on an existing StatefulSet.
   storageClassName: ""
   volumes:
