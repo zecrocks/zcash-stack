@@ -7,6 +7,9 @@ spec:
   type: {{ .Values.zebra.service.type }}
   # ClientIP pins each consumer to one zebra replica; set None to round-robin.
   sessionAffinity: {{ .Values.zebra.service.sessionAffinity | default "ClientIP" }}
+  {{- if .Values.zebra.service.publishNotReadyAddresses }}
+  publishNotReadyAddresses: true
+  {{- end }}
   selector:
     app: {{ .Values.zebra.name }}
   ports:

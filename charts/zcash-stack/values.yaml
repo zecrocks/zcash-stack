@@ -94,6 +94,9 @@ zebra:
     type: ClusterIP
     # Pin each lightwalletd to one replica's chain state (None = round-robin).
     sessionAffinity: ClientIP
+    # Keep zebra in the Service even when not-ready. testnet-only escape hatch for
+    # sync-gate flap that can deadlock lwd init-rpc. Leave false in prod.
+    publishNotReadyAddresses: false
 
   # CPU request kept at 350m to satisfy Autopilot's mem:CPU ratio at 2Gi mem.
   # CPU limit omitted so zebra can burst during sync.
