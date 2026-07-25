@@ -4,9 +4,6 @@ zebra:
   initSnapshot:
     enabled: false
 
-zcashd:
-  enabled: false
-
 lightwalletd:
   enabled: true
   rpcService: zebra

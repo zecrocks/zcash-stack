@@ -135,85 +135,10 @@ zebra:
       failureThreshold: 3
       successThreshold: 1
 
-zcashd:
-  enabled: false
-  name: zcashd
-  testnet: false
-  image:
-    repository: electriccoinco/zcashd
-    tag: "6.20.0"
-    hash: 745098bbec91b7d0ae013c44bcd2400b660b3c7ad80935396df4848af529bfc0
-    pullPolicy: IfNotPresent
-
-  replicas: 1
-  podManagementPolicy: Parallel
-  minReadySeconds: 30
-  pdb:
-    minAvailable: 1
-  topologySpread:
-    enabled: true
-    whenUnsatisfiable: ScheduleAnyway
-
-  initSnapshot:
-    enabled: false
-    url: ""
-    explorer_url: ""
-  reindex: false
-  # Wipe persisted banlist on start (zcashd persists peer bans, zebra does not).
-  clearBanlist: false
-  lightwalletd: true
-  explorer: false
-  wallet: false
-  nodes:
-   - mainnet.z.cash
-  additionalArgs: []
-
-  storageClassName: ""
-  volumes:
-    data:
-      size: 500Gi
-      # claimName: zcashd-data   # optional override for the PVC name
-
-  service:
-    type: ClusterIP
-    # Pin each lightwalletd to one replica's chain state (None = round-robin).
-    sessionAffinity: ClientIP
-
-  resources:
-    requests:
-      cpu: 350m
-      memory: 2Gi
-    limits:
-      memory: 10Gi
-
-  probes:
-    startup:
-      enabled: true
-      periodSeconds: 15
-      timeoutSeconds: 10
-      failureThreshold: 240
-    readiness:
-      enabled: true
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-      successThreshold: 1
-    liveness:
-      enabled: true
-      periodSeconds: 30
-      timeoutSeconds: 10
-      failureThreshold: 5
-      successThreshold: 1
-
-  mine: false
-  mining_address:
-  genproclimit: 1
-  exportdir: /tmp
-
 lightwalletd:
   enabled: true
   name: lightwalletd
-  # Which backend RPC Service to use ("zebra" or "zcashd").
+  # Name of the backend RPC Service to use.
   rpcService: zebra
   donationAddress:
   image:
@@ -316,6 +241,12 @@ lightwalletd:
 explorer:
   enabled: false
   name: explorer
+  # JSON-RPC backend for the explorer image. Empty = the zebra Service and its port.
+  # The image's env vars are still named ZCASHD_*; that is the image's contract, not
+  # a zcashd dependency. Zaino serves gRPC only, so it cannot back this image as-is.
+  backend:
+    host: ""
+    port: ""
   replicas: 1
   topologySpread:
     enabled: true

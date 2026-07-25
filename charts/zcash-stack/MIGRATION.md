@@ -1,3 +1,36 @@
+# Migrating to zcash-stack 0.2.0
+
+**0.2.0 removes zcashd support entirely.** zcashd reached end-of-support: v6.20.0 (2026-06-03,
+the final release) halts itself at mainnet block **3,417,100**, which the chain passed on
+2026-07-18, and there is no `-disabledeprecation` escape hatch and no newer release. A zcashd
+node can no longer follow mainnet, so the chart no longer ships one.
+
+Removed: the `zcashd:` values block and the `zcashd-{statefulset,configmap,rpc-service,headless-service}`
+templates. **If your values file sets any `zcashd.*` key, delete it** - Helm ignores unknown keys,
+so a stale `zcashd.enabled: true` will silently deploy nothing rather than erroring.
+
+`lightwalletd.rpcService` / `zaino.rpcService` now always resolve their port from
+`zebra.testnet` (18232/8232). Behaviour is unchanged for any zebra-backed release; verified with
+`helm diff` against a live release showing an empty diff.
+
+The `explorer` component previously read `zcashd.name` / `zcashd.testnet` for its backend. It now
+has its own keys:
+
+```yaml
+explorer:
+  backend:
+    host: ""   # default: the zebra Service
+    port: ""   # default: 18232 on testnet, else 8232
+```
+
+The explorer image still speaks zcashd JSON-RPC (its env vars remain `ZCASHD_*`) - that is the
+image's contract, not a zcashd dependency. zebra implements the address-index RPCs an explorer
+needs, so pointing it at zebra is the supported path. **Zaino cannot back this image**: it serves
+gRPC on 8137 only.
+
+Existing zcashd PVCs are untouched by the upgrade; delete them yourself once you no longer need
+the chain data.
+
 # Migrating to zcash-stack 0.1.0
 
 0.1.0 replaces the custom Traefik `IngressRouteTCP` setup with a standard Kubernetes
@@ -99,7 +132,7 @@ zebra:
     limits:   { memory: 8Gi }     # CPU limit omitted (burst + Autopilot)
 ```
 
-This applies to `zebra`, `zcashd`, `lightwalletd`, `zaino`, and `tor` (new).
+This applies to `zebra`, `lightwalletd`, `zaino`, and `tor` (new).
 `explorer.resources` keeps its nested shape, but its CPU limit was removed (the old
 `cpu: "1"` limit with a `0.1` request violated GKE Autopilot).
 
@@ -115,7 +148,7 @@ switch probe style without editing templates.
 | Key | Default | Purpose |
 |---|---|---|
 | `global.fsGroup.enabled` | `true` | Set volume ownership via `fsGroup` instead of a root chown init container (faster restarts). Set `false` to keep root chown init containers. |
-| `<service>.storageClassName` | `""` | Now on all stateful workloads (was only zebra/zcashd). Empty = cluster default. |
+| `<service>.storageClassName` | `""` | Now on all stateful workloads (was only zebra). Empty = cluster default. |
 | `<service>.replicas` / `podManagementPolicy` / `minReadySeconds` / `pdb.minAvailable` | see values | Rolling-update / HA controls. A PDB renders only when `replicas > 1`. |
 
 ## Suggested upgrade procedure

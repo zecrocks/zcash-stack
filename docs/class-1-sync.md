@@ -62,7 +62,7 @@ In this workshop, we will be setting up a full (non-mining) node.
 
 Since another user in a blockchain network may be another node or a client application, different types of nodes are also made up of different componentry so that they can more fully support their ultimate use cases and end users. Most commonly, however, you will see a Zcash node made up of:
 
-- `zebrad` or `zcashd` - the core blockchain database server software that provides the backbone of the network
+- `zebrad` - the core blockchain database server software that provides the backbone of the network
 - `zaino` or `lightwalletd` - supporting server software that typically interfaces directly with mobile wallet apps and other light clients
 
 Note that both main components listed above have two names. This is because, as the Zcash development team moves the project forward, different components are replaced with newer implementations. However, conceptually, they are largely interchangeable. Wherever you see `zaino` or `lightwalletd` in the imagery or text below, you can generally safely assume the functionality is more or less equivalent with its newer or older counterpart. In cases where they are not, we will attempt to note the specific differences.

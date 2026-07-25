@@ -28,7 +28,7 @@ docker-watchtower-1     containrrr/watchtower         "/watchtower --inter…"  
 docker-zebra-1          zfnd/zebra:latest             "entrypoint.sh zebrad"   zebra          2 days ago   Up 24 hours (healthy)   0.0.0.0:8232-8233->8232-8233/tcp
 ```
 
-Without a `zcashd` or `zebrad` process running, your lightwallet server cannot interact with the Zcash network more broadly. Meanwhile, without a lightwallet server process, such as `lightwalletd` or `zainod` process running, your client wallet apps won't be able to interact with Zcash's wallet APIs.
+Without a `zebrad` process running, your lightwallet server cannot interact with the Zcash network more broadly. Meanwhile, without a lightwallet server process, such as `lightwalletd` or `zainod` process running, your client wallet apps won't be able to interact with Zcash's wallet APIs.
 
 ## About Tailscale
 

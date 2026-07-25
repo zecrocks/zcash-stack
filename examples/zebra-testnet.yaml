@@ -9,9 +9,6 @@ zebra:
     enabled: false
     url: https://link.storjshare.io/s/jvbcllf2rpohtqhwiget5pkcvyca/nodedumps/zec/zebra-testnet-2024-04-22.tar?download=1
 
-zcashd:
-  enabled: false
-
 lightwalletd:
   rpcService: zebra
   volumes:

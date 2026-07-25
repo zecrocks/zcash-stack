@@ -74,7 +74,7 @@ references it directly and emits no cert-manager annotation.
 Zcashd are IOPS-heavy during the initial sync, so on GKE point them at a provisioned-IOPS
 class:
 
-| Platform | zebra / zcashd (chain) | lightwalletd / zaino (cache) |
+| Platform | zebra (chain) | lightwalletd / zaino (cache) |
 |---|---|---|
 | k3s on NVMe | `local-path` (k3s default; NVMe already gives high IOPS) | `local-path` |
 | GKE Standard / Autopilot | `zcash-chainstate-hyperdisk` (see `examples/storageclasses/gke-hyperdisk.yaml`, 12k IOPS / 400 MiB/s) or `premium-rwo` | `premium-rwo` (SSD) or `standard-rwo` |
@@ -184,7 +184,7 @@ Steady-state usage is modest (zebra ~0.1 vCPU / 1.6 GiB, lightwalletd ~0.15 vCPU
 lightwalletd) requests ~1.5 vCPU / 4.5 GiB.
 
 Disk sizing (mainnet, 2026-06): zebra chain state ~260 GiB and growing, lightwalletd cache
-~17 GiB. The chart defaults to 500 GiB for chain nodes (zebra/zcashd) and 40 GiB for
+~17 GiB. The chart defaults to 500 GiB for chain nodes (zebra) and 40 GiB for
 lightwalletd/zaino. All recommended StorageClasses allow online expansion, so you can
 start smaller. A full single-node stack wants ~600 GiB of disk.
 
@@ -217,7 +217,7 @@ every request is at least 250m CPU / 512Mi, the memory:CPU ratio stays within 1:
 - lightwalletd / zaino scale horizontally. They're thin caches in front of the chain RPC;
   each replica gets its own cache PVC. Set `replicas: 2` for zero-downtime rolling updates:
   the ingress load-balances gRPC across ready pods and the PDB keeps one available.
-- Chain nodes (zebra/zcashd) are not for load-scaling. Each replica is a full node with its
+- Chain nodes (zebra) are not for load-scaling. Each replica is a full node with its
   own large PVC and its own sync. Run 1 (or 2 for redundancy, at the cost of a second full
   sync) and scale lightwalletd/zaino in front instead.
 
@@ -322,15 +322,6 @@ no re-sync:
 
 ```bash
 kubectl delete pod zebra-0
-```
-
-For zcashd the banlist is persisted (`banlist.dat` / `banlist.json`), so a restart alone
-won't clear it. Set `zcashd.clearBanlist: true` and the chart runs an init container that
-wipes those files on start; chain data is untouched, so no re-sync:
-
-```yaml
-zcashd:
-  clearBanlist: true   # drop stale peer bans on start (e.g. after a network upgrade)
 ```
 
 ## Kubernetes cheat sheet

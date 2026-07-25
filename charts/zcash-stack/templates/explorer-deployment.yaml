@@ -59,10 +59,13 @@ spec:
           env:
             - name: EXPLORER_HOSTNAME
               value: "{{ .Values.explorer.hostname }}"
+            # The explorer image speaks zcashd JSON-RPC. zcashd support was removed from
+            # this chart, so point it at any JSON-RPC backend (zebra serves the address
+            # index RPCs an explorer needs). Env names are the image's, not the backend's.
             - name: ZCASHD_HOSTNAME
-              value: "{{ .Values.zcashd.name }}"
+              value: "{{ .Values.explorer.backend.host | default .Values.zebra.name }}"
             - name: ZCASHD_PORT
-              value: "{{ if .Values.zcashd.testnet }}18232{{ else }}8232{{ end }}"
+              value: "{{ .Values.explorer.backend.port | default (ternary 18232 8232 .Values.zebra.testnet) }}"
             - name: ZCASHD_USERNAME
               value: "{{ .Values.rpc.credentials.rpcUser }}"
             - name: ZCASHD_PASSWORD
