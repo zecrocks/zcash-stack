@@ -34,6 +34,10 @@ data:
     # Without this, /ready always returns 200 on testnet (readiness gate is a no-op).
     enforce_on_test_networks = true
     {{- end }}
+    {{- with .Values.zebra.probes.readiness.maxBlocksBehind }}
+    # How many blocks behind the tip still counts as ready. zebrad default is 2.
+    ready_max_blocks_behind = {{ . }}
+    {{- end }}
     {{- end }}
     [tracing]
     use_color = false

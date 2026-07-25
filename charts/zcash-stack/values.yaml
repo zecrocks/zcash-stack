@@ -121,8 +121,8 @@ zebra:
       # gate also applies on testnet. No effect when testnet=false.
       enforceOnTestnet: true
       # zebrad ready_max_blocks_behind. Unset = zebrad's own default (2), which is
-      # tight for testnet: blocks arrive in bursts, so /ready flaps every ~1.5min
-      # and lwd (which Fatals on an RPC error) dies when both replicas dip at once.
+      # tight for testnet: blocks arrive in bursts, so /ready can flap, and lwd
+      # (which Fatals on an RPC error) dies when all replicas dip at once.
       maxBlocksBehind: ""
       periodSeconds: 10
       timeoutSeconds: 5
