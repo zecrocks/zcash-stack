@@ -19,7 +19,10 @@ spec:
       labels:
         app: {{ .Values.zaino.name }}
     spec:
-      {{- include "zcash-stack.podSecurityContext" (dict "uid" 2003 "global" .Values.global) | nindent 6 }}
+      # The zingodevops/zaino image runs as its own user "container_user" (uid/gid 1000)
+      # and refuses root; fsGroup 1000 makes the data PVC group-writable for it.
+      enableServiceLinks: false
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 1000 "global" .Values.global) | nindent 6 }}
       {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.zaino.topologySpread "name" .Values.zaino.name) | nindent 6 }}
       {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
       initContainers:
@@ -31,11 +34,11 @@ spec:
         command: ["/bin/sh", "-c"]
         args:
           - |
-            mkdir -p /home/zaino/.cache/zaino
-            chown -R 2003:2003 /home/zaino
+            mkdir -p /app/data
+            chown -R 1000:1000 /app/data
         volumeMounts:
         - name: data
-          mountPath: /home/zaino/.cache/zaino
+          mountPath: /app/data
       {{- end }}
       - name: init-rpc
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
@@ -44,10 +47,11 @@ spec:
       - name: zaino
         image: {{ .Values.zaino.image.repository }}:{{ .Values.zaino.image.tag }}{{ with .Values.zaino.image.hash }}@sha256:{{ . }}{{ end }}
         imagePullPolicy: {{ .Values.zaino.image.pullPolicy }}
-        command: ["/app/zainod"]
+        # Image ENTRYPOINT is /entrypoint.sh (refuses root); invoke the "start" subcommand.
         args:
+          - start
           - --config
-          - /etc/zaino/zaino.toml
+          - /app/config/zainod.toml
           {{- with .Values.zaino.additionalArgs }}
             {{- toYaml . | nindent 10 }}
           {{- end}}
@@ -56,9 +60,9 @@ spec:
           name: grpc
         volumeMounts:
         - name: data
-          mountPath: /home/zaino/.cache/zaino
+          mountPath: /app/data
         - name: config
-          mountPath: /etc/zaino
+          mountPath: /app/config
         {{- if .Values.zaino.probes.startup.enabled }}
         startupProbe:
           {{- if eq .Values.zaino.probes.startup.type "grpc" }}

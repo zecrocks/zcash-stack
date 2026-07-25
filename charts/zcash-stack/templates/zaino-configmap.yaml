@@ -4,22 +4,25 @@ kind: ConfigMap
 metadata:
   name: {{ .Values.zaino.name }}-config
 data:
-  zaino.toml: |
+  zainod.toml: |
+    backend = "fetch"
     network = "{{ if .Values.zebra.testnet }}Testnet{{ else }}Mainnet{{ end }}"
-    grpc_listen_address = "0.0.0.0:8137"
-    grpc_tls = false
-    tls_cert_path = "None"
-    tls_key_path = "None"
-    validator_listen_address = "{{ .Values.zaino.rpcService }}:{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}"
-    validator_cookie_auth = false
-    validator_cookie_path = "None"
-    validator_user = "None"
-    validator_password = "None"
-    map_capacity = "None"
-    map_shard_amount = "None"
-    db_path = "/home/zaino/.cache/zaino"
-    db_size = {{ .Values.zaino.config.dbSize }}
-    no_sync = {{ .Values.zaino.config.noSync }}
-    no_db = {{ .Values.zaino.config.noDB }}
-    no_state = {{ .Values.zaino.config.noState }}
+
+    [grpc_settings]
+    listen_address = "0.0.0.0:{{ .Values.zaino.service.port }}"
+
+    [validator_settings]
+    validator_jsonrpc_listen_address = "{{ .Values.zaino.rpcService }}:{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}"
+
+    [service]
+    timeout = {{ .Values.zaino.config.service.timeout }}
+    channel_size = {{ .Values.zaino.config.service.channelSize }}
+
+    [storage.cache]
+    capacity = {{ .Values.zaino.config.cache.capacity }}
+    shard_power = {{ .Values.zaino.config.cache.shardPower }}
+
+    [storage.database]
+    path = "/app/data"
+    size = {{ .Values.zaino.config.dbSize }}
 {{- end }}

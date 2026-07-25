@@ -120,6 +120,10 @@ zebra:
       # zebrad /ready returns 200 on testnet unless this is set; keep true so the
       # gate also applies on testnet. No effect when testnet=false.
       enforceOnTestnet: true
+      # zebrad ready_max_blocks_behind. Unset = zebrad's own default (2), which is
+      # tight for testnet: blocks arrive in bursts, so /ready flaps every ~1.5min
+      # and lwd (which Fatals on an RPC error) dies when both replicas dip at once.
+      maxBlocksBehind: ""
       periodSeconds: 10
       timeoutSeconds: 5
       failureThreshold: 3
@@ -377,9 +381,9 @@ zaino:
   name: zaino
   rpcService: zebra
   image:
-    repository: emersonian/zcash-zaino
-    tag: 0.1.2-zr4
-    hash: 9965cc15e018c2c8cc3d3ce708717f25191f00cb7175f3eb35cb1bfd993fc7d5
+    repository: zingodevops/zaino
+    tag: 0.6.0-no-tls
+    hash: 3ed6cbb5ed85d6a610ec5cf80cffb4a14a6f5b2517abad754a296cad95605bb0
     pullPolicy: IfNotPresent
 
   replicas: 1
@@ -431,10 +435,13 @@ zaino:
 
   additionalArgs: []
   config:
-    dbSize: 64
-    noSync: false
-    noDB: false
-    noState: false
+    dbSize: 128            # [storage.database] size: LMDB map cap in GiB
+    service:
+      timeout: 30
+      channelSize: 32
+    cache:
+      capacity: 10000
+      shardPower: 4
 
   ingress:
     enabled: true
