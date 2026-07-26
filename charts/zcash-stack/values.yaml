@@ -147,9 +147,9 @@ lightwalletd:
     # EDGE CONTRACT: this backend must answer non-gRPC `OPTIONS /` with 415 and
     # /healthz with 200/503 (the Fly HAProxy edge health-checks `expect 415`).
     # Don't add a website / change the 415 response here while an HAProxy edge checks it.
-    repository: emersonian/zcash-lwd
-    tag: v0.4.19-zr8
-    hash: e94c4cc637c3a3f6f18924f7f4240ae7c77dbb8a5345204187a144ada578d49e
+    repository: electriccoinco/lightwalletd
+    tag: v0.5.0
+    hash: f2900ca478ff5fb127d4859a8694b4d8839d263c189bf4a9e9437a85c9165470
     pullPolicy: IfNotPresent
 
   # Parallel ingestor tuning (env vars). Empty = binary defaults (workers=8, window=64).
