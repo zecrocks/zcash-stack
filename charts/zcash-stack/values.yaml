@@ -67,6 +67,9 @@ zebra:
     # have a single top-level dir (extracted with --strip-components=1).
     enabled: false
     url: https://link.storjshare.io/s/jvsl24cnnc6o5xhd2zqn5svvuwda/snapshots/zebra/zebra-2026-06-03.tar?download=1
+    # A pre-existing, unmarked volume is normally adopted as-is. Set false to wipe and
+    # restore it instead, for when the on-disk data is unusable by the running image.
+    adoptExisting: true
 
   additionalEnv: {}
 
@@ -142,8 +145,8 @@ lightwalletd:
   rpcService: zebra
   donationAddress:
   image:
-    # emersonian/zcash-lwd is a public fork: pooled RPC client + parallel ingestor,
-    # much faster block catch-up than stock v0.4.19.
+    # Stock upstream lightwalletd. Block ingest is serial, so building a cache from
+    # scratch is slow; seed it with initSnapshot below instead.
     # EDGE CONTRACT: this backend must answer non-gRPC `OPTIONS /` with 415 and
     # /healthz with 200/503 (the Fly HAProxy edge health-checks `expect 415`).
     # Don't add a website / change the 415 response here while an HAProxy edge checks it.
@@ -174,6 +177,9 @@ lightwalletd:
   initSnapshot:
     enabled: false
     url: https://link.storjshare.io/s/jvfegr7l7gwgcsvdml5lazlnypdq/nodedumps/zec/lwd/2024-03-26.tar?download=1
+    # See zebra.initSnapshot.adoptExisting. Set false to replace a cache the running
+    # image cannot read, e.g. one written with a different cache start height.
+    adoptExisting: true
   additionalArgs: []
 
   storageClassName: ""

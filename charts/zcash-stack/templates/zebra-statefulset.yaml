@@ -56,6 +56,7 @@ spec:
             "uid" "2001"
             "claimName" (printf "%s-data" .Values.zebra.name)
             "doChown" (not .Values.global.fsGroup.enabled)
+            "adoptExisting" .Values.zebra.initSnapshot.adoptExisting
             "global" .Values.global) | nindent 6 }}
       {{- else if not .Values.global.fsGroup.enabled }}
       {{- include "zcash-stack.setPermissionsInitContainer" (dict

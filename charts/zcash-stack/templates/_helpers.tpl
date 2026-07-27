@@ -16,15 +16,17 @@ securityContext:
 
 {{/*
 zcash-stack.restoreInitContainer - idempotent, resumable snapshot-restore init
-container (markers: .snapshot-complete / .snapshot-inprogress; adopts a non-empty
-unmarked volume, never wipes it). Downloader by URL scheme: gs:// via gsutil on the
-cloud-sdk image, http(s):// via wget on alpine.
+container (markers: .snapshot-complete / .snapshot-inprogress). A non-empty unmarked
+volume is adopted (never wiped) unless adoptExisting is false, which wipes and
+restores instead. Downloader by URL scheme: gs:// via gsutil on the cloud-sdk image,
+http(s):// via wget on alpine.
 Usage:
   {{- include "zcash-stack.restoreInitContainer" (dict
         "url" .Values.zebra.initSnapshot.url
         "uid" "2001"
         "claimName" (printf "%s-data" .Values.zebra.name)
         "doChown" (not .Values.global.fsGroup.enabled)
+        "adoptExisting" .Values.zebra.initSnapshot.adoptExisting
         "global" .Values.global) | nindent 6 }}
 */}}
 {{- define "zcash-stack.restoreInitContainer" -}}
@@ -35,8 +37,11 @@ Usage:
   {{- else }}
   image: alpine:{{ .global.images.alpine.tag }}@sha256:{{ .global.images.alpine.hash }}
   {{- end }}
+  {{- /* Wiping an adopted dataset means unlinking files the previous image wrote as
+         root, which the data uid can't do under fsGroup, so wipe as root and chown back. */}}
+  {{- $asRoot := or .doChown (eq (toString .adoptExisting) "false") }}
   securityContext:
-    {{- if .doChown }}
+    {{- if $asRoot }}
     runAsUser: 0
     {{- else }}
     runAsUser: {{ .uid }}
@@ -57,7 +62,7 @@ Usage:
       set -o pipefail
       DATA_DIR=/data
       URL="{{ .url }}"
-      DO_CHOWN="{{ .doChown }}"
+      DO_CHOWN="{{ $asRoot }}"
       UID_OWNER="{{ .uid }}"
       COMPLETE="$DATA_DIR/.snapshot-complete"
       INPROGRESS="$DATA_DIR/.snapshot-inprogress"
@@ -84,8 +89,13 @@ Usage:
         echo "Volume empty. Restoring.";
         restore;
       else
+        {{- if (eq (toString .adoptExisting) "false") }}
+        echo "Non-empty volume without markers: wiping and restoring (adoptExisting=false).";
+        restore;
+        {{- else }}
         echo "Non-empty volume without markers: adopting existing dataset as complete.";
         : > "$COMPLETE";
+        {{- end }}
       fi
       if [ "$DO_CHOWN" = "true" ]; then
         echo "chown -R $UID_OWNER $DATA_DIR";

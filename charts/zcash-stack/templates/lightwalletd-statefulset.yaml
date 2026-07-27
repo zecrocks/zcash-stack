@@ -29,6 +29,7 @@ spec:
             "uid" "2002"
             "claimName" "data"
             "doChown" (not .Values.global.fsGroup.enabled)
+            "adoptExisting" .Values.lightwalletd.initSnapshot.adoptExisting
             "global" .Values.global) | nindent 6 }}
       {{- else if not .Values.global.fsGroup.enabled }}
       {{- include "zcash-stack.setPermissionsInitContainer" (dict
