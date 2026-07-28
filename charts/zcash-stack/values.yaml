@@ -680,3 +680,167 @@ dnsSeeder:
       timeoutSeconds: 5
       failureThreshold: 3
       successThreshold: 1
+
+zecd:
+  enabled: false
+  name: zecd
+  # In-cluster service name of the node backend to dial. The RPC port follows the network
+  # of whichever node component is enabled (8232 mainnet / 18232 testnet).
+  rpcService: zebra
+  # Wallet name created by `zecd init`; its dir is <datadir>/<defaultWallet>.
+  defaultWallet: default
+  image:
+    repository: ghcr.io/zecrocks/zecd
+    tag: "0.5.0"
+    hash: ab432c38c1bac5c7a0e7ca8df4632f16152a476ccb69f47cccfc88db1436f5f4
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+  podManagementPolicy: Parallel
+  minReadySeconds: 15
+  pdb:
+    minAvailable: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+
+  nodeSelector: {}
+
+  storageClassName: ""
+  volumes:
+    data:
+      # Light client: wallet DB + identity only, no chain index.
+      size: 10Gi
+
+  service:
+    type: ClusterIP
+    port: 8232
+
+  backend:
+    connectTimeoutSecs: 10
+    reconnectBaseSecs: 1
+    reconnectMaxSecs: 60
+
+  # zecd's own RPC auth (clients authenticate TO zecd). NOT the backend creds.
+  rpc:
+    user: zec
+    # Dev-only fallback; lands in the ConfigMap. For real deploys set passwordSecret instead
+    # (sourced via ZECD_RPC_PASSWORD env) and leave this as the placeholder.
+    password: CHANGE-ME
+    # Secret holding the RPC password (spend-equivalent for clients). When set, it is injected
+    # as ZECD_RPC_PASSWORD and the inline password above is omitted from the ConfigMap.
+    passwordSecret:
+      name: ""
+      key: rpc-password
+
+  # Wallet key material. Create the wallet locally with `zecd init` and ship ONLY the encrypted
+  # keys.toml as a Secret; the PVC is a disposable cache (zecd rebuilds data.sqlite from
+  # keys.toml via bootstrap_from_keys).
+  keys:
+    bootstrapFromKeys: true
+    # Secret holding the encrypted `keys.toml` (the seed). When set, an init container copies
+    # it onto the volume at 0600 and zecd reads it from there, because bootstrap rewrites the
+    # file and a Secret mount is read-only. An existing copy is never overwritten. Empty =
+    # keys.toml is expected to already live on the volume under the wallet dir.
+    keysSecret:
+      name: ""
+      key: keys.toml
+    # FAST PATH ONLY. Secret holding the age identity (spend authority) for unattended
+    # auto-unlock; mounted read-only at /keys/identity.txt. Leave empty for the SECURE
+    # (recommended) path: the wallet is passphrase-encrypted, stays locked, and clients
+    # unlock per-session with walletpassphrase - no spend authority ever lives in-cluster.
+    identitySecret:
+      name: ""
+      key: identity.txt
+
+  # Receiving pools and transparent (t-address) support.
+  #
+  # NOTE ON IRONWOOD: Ironwood (NU6.3) is NOT a pool value here. Upstream models it as
+  # Orchard "V3" notes, reusing Orchard keys and addresses, so ironwood funds arrive at
+  # ordinary Orchard addresses. Listing "orchard" covers them; "ironwood" is rejected.
+  pools:
+    # Shielded pools the wallet receives into: sapling and/or orchard.
+    enabled: [orchard]
+    # Subset of the above used for a new address's receivers. Empty = same as enabled.
+    defaultReceivers: []
+
+    # Transparent is an ADDITIVE opt-in, not a member of `enabled` above. A wallet can be
+    # orchard-only plus transparent, sapling+orchard plus transparent, and so on.
+    transparent: false
+    # Make a bare t-address the no-argument getnewaddress default (implies transparent).
+    transparentDefault: false
+
+    # RECOVERY WINDOW. Consecutive unfunded transparent indices still discovered when
+    # restoring from seed. Shielded funds restore unconditionally; transparent funds only
+    # restore if their index falls inside this window.
+    #
+    # IMPORTANT INTERACTION: pre-exposure marks every index below transparentInitialScan
+    # as exposed, but the window's start only advances when an address is FUNDED. So with
+    # a non-zero initial scan and nothing funded near the top, the wallet reports zero
+    # in-window slots and warns on every startup unless this value EXCEEDS
+    # transparentInitialScan. Raising the initial scan does not help, it makes the gap
+    # deeper. Either set this above the initial scan, or accept the warning and rely on
+    # the floor (indices below the initial scan are still recoverable).
+    transparentGapLimit: 20
+    # Pre-expose and scan indices 0..N at startup so a stateless restore rediscovers a
+    # payment to any of them, independent of (and usually far larger than) the gap limit.
+    # Use this when many addresses are handed out. 0 = discovery is bounded by
+    # transparentGapLimit alone. Costs startup time on a COLD wallet only: roughly
+    # 400 addr/s (62000 took about 2.5 min), it resumes rather than restarting when
+    # raised, and an unchanged restart skips it in about a second.
+    transparentInitialScan: 0
+    # true keeps issuing addresses past the recovery window with a loud warning; false
+    # fails getnewaddress with an actionable error instead. Funds received beyond the
+    # window may be unrecoverable from the seed.
+    transparentAllowBeyondRecoveryWindow: true
+    # Warn when fewer than this many in-window slots remain. 0 = warn only at exhaustion.
+    # NOTE: zecd uses deny_unknown_fields, so only keys the RUNNING build knows may be
+    # emitted here. Keep this set aligned with the released image, not with a newer
+    # source checkout, or the daemon refuses to start.
+    transparentGapWarnThreshold: 0
+
+  spend:
+    # Cap on Orchard actions per transaction.
+    orchardActionLimit: 250
+
+  sync:
+    intervalSecs: 20
+
+  health:
+    port: 9233
+
+  log:
+    level: info
+    format: json
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      memory: 2Gi
+
+  # HTTP probes on the health port (/healthz liveness, /readyz readiness).
+  probes:
+    startup:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 60
+    readiness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 5
+      successThreshold: 1
+
+  additionalArgs: []
+
+# Optional hidden service exposing lightwalletd/zaino over .onion. tor keeps a root
+# chown/chmod init container (hidden-service dir must be 0700) and skips fsGroup.

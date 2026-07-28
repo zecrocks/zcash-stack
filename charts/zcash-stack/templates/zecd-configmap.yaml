@@ -1,0 +1,79 @@
+{{- if .Values.zecd.enabled }}
+{{- $tn := (include "zcash-stack.testnet" . | eq "true") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.zecd.name }}-config
+data:
+  zecd.toml: |
+    network = "{{ if $tn }}test{{ else }}main{{ end }}"
+    datadir = "/var/lib/zecd"
+    default_wallet = "default"
+
+    [wallets.default]
+    dir = "/var/lib/zecd/default"
+
+    [backend]
+    # Direct to the node's JSON-RPC (no lightwalletd in the path). Port is the backend's
+    # rpc.listen_addr (8232/18232). It is a different pod from zecd's own rpc below, so
+    # sharing the port number is fine.
+    server = "zebra://{{ .Values.zecd.rpcService }}:{{ if $tn }}18232{{ else }}8232{{ end }}"
+    connect_timeout_secs = {{ .Values.zecd.backend.connectTimeoutSecs }}
+    reconnect_base_secs = {{ .Values.zecd.backend.reconnectBaseSecs }}
+    reconnect_max_secs = {{ .Values.zecd.backend.reconnectMaxSecs }}
+
+    [rpc]
+    # zecd's own Bitcoin-dialect RPC. Auth is spend authority: keep off untrusted nets.
+    bind = "0.0.0.0"
+    port = {{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}
+    user = "{{ .Values.zecd.rpc.user }}"
+    {{- if .Values.zecd.rpc.passwordSecret.name }}
+    # password comes from ZECD_RPC_PASSWORD (Secret env), kept out of this ConfigMap.
+    {{- else }}
+    password = "{{ .Values.zecd.rpc.password }}"
+    {{- end }}
+
+    [keys]
+    # Rebuild data.sqlite from keys.toml on an empty datadir, so the PVC is a disposable cache.
+    bootstrap_from_keys = {{ .Values.zecd.keys.bootstrapFromKeys }}
+    {{- if .Values.zecd.keys.identitySecret.name }}
+    # Fast path: spend authority mounted from a Secret; unattended auto-unlock at startup.
+    # Staged onto the PVC at 0600 by the stage-identity init container (a Secret volume is
+    # group-readable under fsGroup, which zecd rejects as insecure).
+    age_identity = "/var/lib/zecd/identity.txt"
+    auto_unlock = true
+    {{- else }}
+    # Secure path: no spend authority in-cluster. The passphrase-encrypted wallet starts
+    # locked; clients must call walletpassphrase to unlock before sending.
+    auto_unlock = false
+    {{- end }}
+
+    [sync]
+    interval_secs = {{ .Values.zecd.sync.intervalSecs }}
+
+    [health]
+    bind = "0.0.0.0"
+    port = {{ .Values.zecd.health.port }}
+
+    [log]
+    level = "{{ .Values.zecd.log.level }}"
+    format = "{{ .Values.zecd.log.format }}"
+    [pools]
+    enabled = [{{ range $i, $p := .Values.zecd.pools.enabled }}{{ if $i }}, {{ end }}"{{ $p }}"{{ end }}]
+    {{- with .Values.zecd.pools.defaultReceivers }}
+    default_receivers = [{{ range $i, $p := . }}{{ if $i }}, {{ end }}"{{ $p }}"{{ end }}]
+    {{- end }}
+    {{- if .Values.zecd.pools.transparent }}
+    # Additive opt-in; not a member of `enabled` above.
+    transparent = true
+    transparent_default = {{ .Values.zecd.pools.transparentDefault }}
+    # Restore window: transparent funds are only recoverable from seed inside it.
+    transparent_gap_limit = {{ .Values.zecd.pools.transparentGapLimit }}
+    transparent_initial_scan = {{ .Values.zecd.pools.transparentInitialScan }}
+    transparent_allow_beyond_recovery_window = {{ .Values.zecd.pools.transparentAllowBeyondRecoveryWindow }}
+    transparent_gap_warn_threshold = {{ .Values.zecd.pools.transparentGapWarnThreshold }}
+    {{- end }}
+
+    [spend]
+    orchard_action_limit = {{ .Values.zecd.spend.orchardActionLimit }}
+{{- end }}

@@ -17,3 +17,7 @@
 ---
 {{ include "zcash-stack.pdb" (dict "replicas" .Values.dnsSeeder.replicas "name" .Values.dnsSeeder.name "minAvailable" .Values.dnsSeeder.pdb.minAvailable) }}
 {{- end }}
+{{- if .Values.zecd.enabled }}
+---
+{{ include "zcash-stack.pdb" (dict "replicas" .Values.zecd.replicas "name" .Values.zecd.name "minAvailable" .Values.zecd.pdb.minAvailable) }}
+{{- end }}

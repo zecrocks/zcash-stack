@@ -1,0 +1,15 @@
+{{- if .Values.zecd.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zecd.name }}
+spec:
+  type: {{ .Values.zecd.service.type }}
+  selector:
+    app: {{ .Values.zecd.name }}
+  ports:
+    - protocol: TCP
+      port: {{ .Values.zecd.service.port }}
+      targetPort: {{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}
+      name: rpc
+{{- end }}

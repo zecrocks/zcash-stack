@@ -1,0 +1,193 @@
+{{- if .Values.zecd.enabled }}
+{{- $rpcPort := ((include "zcash-stack.testnet" . | eq "true") | ternary 18232 8232) }}
+{{- $healthPort := .Values.zecd.health.port }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.zecd.name }}
+spec:
+  serviceName: {{ .Values.zecd.name }}
+  replicas: {{ .Values.zecd.replicas }}
+  podManagementPolicy: {{ .Values.zecd.podManagementPolicy | default "Parallel" }}
+  minReadySeconds: {{ .Values.zecd.minReadySeconds | default 0 }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ .Values.zecd.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.zecd.name }}
+    spec:
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 10001 "global" .Values.global) | nindent 6 }}
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.zecd.topologySpread "name" .Values.zecd.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
+      {{- with .Values.zecd.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+      {{- if not .Values.global.fsGroup.enabled }}
+      # zecd image is scratch (no shell); chown the data volume from busybox instead.
+      - name: init-perms
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        securityContext:
+          runAsUser: 0
+        command: ["/bin/sh", "-c"]
+        args: ["chown -R 10001:10001 /var/lib/zecd"]
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/zecd
+      {{- end }}
+      {{- if .Values.zecd.keys.keysSecret.name }}
+      # zecd needs keys.toml WRITABLE (bootstrap rewrites it), but a Secret mount is
+      # read-only, so stage a copy onto the PVC at 0600. The [ -f ] guard means an
+      # existing wallet is never clobbered on restart.
+      - name: stage-keys
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        securityContext:
+          runAsUser: 10001
+        command: ['sh', '-c', '[ -f /var/lib/zecd/keys.toml ] || cp /secrets/keys.toml /var/lib/zecd/keys.toml; chmod 600 /var/lib/zecd/keys.toml']
+        volumeMounts:
+        - name: keys
+          mountPath: /secrets
+          readOnly: true
+        - name: data
+          mountPath: /var/lib/zecd
+      {{- end }}
+      - name: init-rpc
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        command: ['sh', '-c', "until nc -zv {{ .Values.zecd.rpcService }} {{ $rpcPort }}; do echo waiting for node rpc; sleep 2; done"]
+      {{- if .Values.zecd.keys.identitySecret.name }}
+      # zecd rejects an age identity that is group/other-readable (mode & 0o077 != 0). A Secret
+      # volume under fsGroup lands 0440, so stage the identity onto the PVC as 0600 owned by the
+      # zecd uid; the daemon reads it from there (age_identity in the ConfigMap).
+      - name: stage-identity
+        image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
+        securityContext:
+          runAsUser: 10001
+        command: ['sh', '-c', 'cp /identity-src/identity.txt /var/lib/zecd/identity.txt && chmod 600 /var/lib/zecd/identity.txt']
+        volumeMounts:
+        - name: identity
+          mountPath: /identity-src
+          readOnly: true
+        - name: data
+          mountPath: /var/lib/zecd
+      {{- end }}
+      containers:
+      - name: zecd
+        image: {{ .Values.zecd.image.repository }}:{{ .Values.zecd.image.tag }}{{ with .Values.zecd.image.hash }}@sha256:{{ . }}{{ end }}
+        imagePullPolicy: {{ .Values.zecd.image.pullPolicy }}
+        # ENTRYPOINT is zecd; pass datadir + config file.
+        args:
+          - --datadir=/var/lib/zecd
+          - --conf=/etc/zecd/zecd.toml
+          {{- with .Values.zecd.additionalArgs }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- if or .Values.zecd.keys.keysSecret.name .Values.zecd.rpc.passwordSecret.name }}
+        env:
+        {{- if .Values.zecd.keys.keysSecret.name }}
+        # Points at the PVC copy staged by the stage-keys init container, not the
+        # read-only Secret mount: bootstrap rewrites this file.
+        - name: ZECD_KEYS_FILE
+          value: /var/lib/zecd/keys.toml
+        {{- end }}
+        {{- if .Values.zecd.rpc.passwordSecret.name }}
+        # RPC password (spend-equivalent for clients) from a Secret, never the ConfigMap.
+        - name: ZECD_RPC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.zecd.rpc.passwordSecret.name }}
+              key: {{ .Values.zecd.rpc.passwordSecret.key }}
+        {{- end }}
+        {{- end }}
+        ports:
+        - containerPort: {{ $rpcPort }}
+          name: rpc
+        - containerPort: {{ $healthPort }}
+          name: health
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/zecd
+        - name: config
+          mountPath: /etc/zecd
+        {{- if .Values.zecd.keys.keysSecret.name }}
+        - name: keys
+          mountPath: /secrets
+          readOnly: true
+        {{- end }}
+        {{- if .Values.zecd.keys.identitySecret.name }}
+        - name: identity
+          mountPath: /keys
+          readOnly: true
+        {{- end }}
+        {{- if .Values.zecd.probes.startup.enabled }}
+        startupProbe:
+          httpGet:
+            path: /healthz
+            port: {{ $healthPort }}
+          periodSeconds: {{ .Values.zecd.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.zecd.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.zecd.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.zecd.probes.readiness.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: {{ $healthPort }}
+          periodSeconds: {{ .Values.zecd.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zecd.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zecd.probes.readiness.failureThreshold }}
+          successThreshold: {{ .Values.zecd.probes.readiness.successThreshold }}
+        {{- end }}
+        {{- if .Values.zecd.probes.liveness.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ $healthPort }}
+          periodSeconds: {{ .Values.zecd.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zecd.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zecd.probes.liveness.failureThreshold }}
+          successThreshold: {{ .Values.zecd.probes.liveness.successThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.zecd.resources | nindent 10 }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ .Values.zecd.name }}-config
+      {{- if .Values.zecd.keys.keysSecret.name }}
+      - name: keys
+        secret:
+          secretName: {{ .Values.zecd.keys.keysSecret.name }}
+          # Staged to the PVC by stage-keys; this mount is just the source copy.
+          items:
+            - key: {{ .Values.zecd.keys.keysSecret.key }}
+              path: keys.toml
+              mode: 0400
+      {{- end }}
+      {{- if .Values.zecd.keys.identitySecret.name }}
+      - name: identity
+        secret:
+          secretName: {{ .Values.zecd.keys.identitySecret.name }}
+          # zecd reads /keys/identity.txt regardless of the Secret's key name.
+          items:
+            - key: {{ .Values.zecd.keys.identitySecret.key }}
+              path: identity.txt
+              mode: 0400
+      {{- end }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .Values.zecd.volumes.data.size }}
+      {{- if .Values.zecd.storageClassName }}
+      storageClassName: {{ .Values.zecd.storageClassName }}
+      {{- end }}
+{{- end }}
