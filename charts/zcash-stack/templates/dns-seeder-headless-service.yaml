@@ -1,0 +1,19 @@
+{{- if .Values.dnsSeeder.enabled }}
+# Headless service to satisfy the StatefulSet serviceName. Traffic reaches the
+# pods via the LoadBalancer Services (dns-seeder-udp/-tcp), not this one.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dnsSeeder.name }}-headless
+  labels:
+    app: {{ .Values.dnsSeeder.name }}
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .Values.dnsSeeder.name }}
+  ports:
+    - name: dns-tcp
+      port: {{ .Values.dnsSeeder.dns.listenPort }}
+      targetPort: dns-tcp
+      protocol: TCP
+{{- end }}

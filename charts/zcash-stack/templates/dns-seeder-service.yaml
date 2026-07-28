@@ -1,0 +1,59 @@
+{{- if .Values.dnsSeeder.enabled }}
+{{- $s := .Values.dnsSeeder.service }}
+{{- if $s.singleMixedService }}
+# One L4 Service carrying both DNS protocols on :53 -> container :1053.
+# NOTE: mixed TCP+UDP needs MixedProtocolLBService (k8s >=1.26); on GKE add
+# cloud.google.com/l4-rbs: "enabled" via service.annotations.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dnsSeeder.name }}
+  labels:
+    app: {{ .Values.dnsSeeder.name }}
+  {{- with $s.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $s.type }}
+  # Cluster, not Local: Local drops the external UDP path on the GKE target-pool LB.
+  externalTrafficPolicy: {{ $s.externalTrafficPolicy }}
+  {{- with $s.loadBalancerIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+  selector:
+    app: {{ .Values.dnsSeeder.name }}
+  ports:
+    - { name: dns-udp, protocol: UDP, port: {{ $s.port }}, targetPort: dns-udp }
+    - { name: dns-tcp, protocol: TCP, port: {{ $s.port }}, targetPort: dns-tcp }
+{{- else }}
+# Split into two Services (some clouds reject a mixed-protocol LB). Both pin the
+# SAME loadBalancerIP so the glue/NS record stays a single A record.
+{{- range $proto := list "udp" "tcp" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.dnsSeeder.name }}-{{ $proto }}
+  labels:
+    app: {{ $.Values.dnsSeeder.name }}
+  {{- with $s.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $s.type }}
+  externalTrafficPolicy: {{ $s.externalTrafficPolicy }}
+  {{- with $s.loadBalancerIP }}
+  loadBalancerIP: {{ . | quote }}
+  {{- end }}
+  selector:
+    app: {{ $.Values.dnsSeeder.name }}
+  ports:
+    - name: dns-{{ $proto }}
+      protocol: {{ $proto | upper }}
+      port: {{ $s.port }}
+      targetPort: dns-{{ $proto }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

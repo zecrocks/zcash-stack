@@ -1,0 +1,134 @@
+{{- if .Values.dnsSeeder.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.dnsSeeder.name }}
+spec:
+  # Per-pod PVC persists the zebra peer cache (/cache/zebra/network/*.peers) so
+  # pods restart warm instead of recrawling from zero. Pods stay interchangeable
+  # behind the LB Services; the headless service just satisfies serviceName.
+  serviceName: {{ .Values.dnsSeeder.name }}-headless
+  replicas: {{ .Values.dnsSeeder.replicas }}
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ .Values.dnsSeeder.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.dnsSeeder.name }}
+    spec:
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 65532 "global" .Values.global) | nindent 6 }}
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.dnsSeeder.topologySpread "name" .Values.dnsSeeder.name) | nindent 6 }}
+      {{- if .Values.dnsSeeder.antiAffinity.enabled }}
+      # Keep the crawler off nodes running a P2P full node; they exhaust ephemeral ports.
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values: {{ .Values.dnsSeeder.antiAffinity.apps | toJson }}
+              {{- with .Values.dnsSeeder.antiAffinity.namespaces }}
+              namespaces: {{ . | toJson }}
+              {{- end }}
+              topologyKey: {{ .Values.dnsSeeder.antiAffinity.topologyKey }}
+      {{- end }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
+      {{- if not .Values.global.fsGroup.enabled }}
+      initContainers:
+      {{- include "zcash-stack.setPermissionsInitContainer" (dict
+            "uid" "65532"
+            "claimName" (printf "%s-cache" .Values.dnsSeeder.name)
+            "global" .Values.global) | nindent 6 }}
+      {{- end }}
+      containers:
+        - name: dns-seeder
+          image: {{ .Values.dnsSeeder.image.repository }}:{{ .Values.dnsSeeder.image.tag }}{{ with .Values.dnsSeeder.image.hash }}@sha256:{{ . }}{{ end }}
+          imagePullPolicy: {{ .Values.dnsSeeder.image.pullPolicy }}
+          ports:
+            # DNS shares one container port across both protocols; names must be unique.
+            - { name: dns-udp, containerPort: {{ .Values.dnsSeeder.dns.listenPort }}, protocol: UDP }
+            - { name: dns-tcp, containerPort: {{ .Values.dnsSeeder.dns.listenPort }}, protocol: TCP }
+            - { name: health, containerPort: 8080, protocol: TCP }
+            - { name: metrics, containerPort: 9999, protocol: TCP }
+          {{- if .Values.dnsSeeder.probes.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: /health
+              port: health
+            periodSeconds: {{ .Values.dnsSeeder.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.dnsSeeder.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.dnsSeeder.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if .Values.dnsSeeder.probes.readiness.enabled }}
+          readinessProbe:
+            # /ready is 200 only once each zone has enough servable peers.
+            httpGet:
+              path: /ready
+              port: health
+            periodSeconds: {{ .Values.dnsSeeder.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.dnsSeeder.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.dnsSeeder.probes.readiness.failureThreshold }}
+            successThreshold: {{ .Values.dnsSeeder.probes.readiness.successThreshold }}
+          {{- end }}
+          {{- if .Values.dnsSeeder.probes.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: health
+            periodSeconds: {{ .Values.dnsSeeder.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.dnsSeeder.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.dnsSeeder.probes.liveness.failureThreshold }}
+            successThreshold: {{ .Values.dnsSeeder.probes.liveness.successThreshold }}
+          {{- end }}
+          env:
+            - name: ZEEDER__DNS__LISTEN_ADDR
+              value: "0.0.0.0:{{ .Values.dnsSeeder.dns.listenPort }}"
+            - name: ZEEDER__HEALTH__ENDPOINT_ADDR
+              value: "0.0.0.0:8080"
+            - name: ZEEDER__METRICS__ENDPOINT_ADDR
+              value: "0.0.0.0:9999"
+            - name: ZEEDER__RATE_LIMIT__QUERIES_PER_SECOND
+              value: "{{ .Values.dnsSeeder.rateLimit.queriesPerSecond }}"
+            - name: ZEEDER__RATE_LIMIT__BURST_SIZE
+              value: "{{ .Values.dnsSeeder.rateLimit.burstSize }}"
+            {{- range $net, $zone := .Values.dnsSeeder.zones }}
+            {{- if $zone.enabled }}
+            - name: ZEEDER__ZONES__{{ $net | upper }}__DOMAIN
+              value: "{{ required (printf "dnsSeeder.zones.%s.domain is required" $net) $zone.domain }}"
+            - name: ZEEDER__ZONES__{{ $net | upper }}__NAMESERVER
+              value: "{{ required (printf "dnsSeeder.zones.%s.nameserver is required" $net) $zone.nameserver }}"
+            - name: ZEEDER__ZONES__{{ $net | upper }}__TTL
+              value: "{{ $zone.ttl }}"
+            {{- end }}
+            {{- end }}
+            # Emitted last so the env list order matches releases that had this appended
+            # by `kubectl set env` during the 2026-07-28 incident (keeps helm diff clean).
+            - name: ZEEDER__HEALTH__READY_THRESHOLD
+              value: "{{ .Values.dnsSeeder.readyThreshold }}"
+            {{- range $key, $value := .Values.dnsSeeder.env }}
+            - name: {{ $key }}
+              value: "{{ $value }}"
+            {{- end }}
+          volumeMounts:
+            # zebra writes the peer cache under /cache/zebra/network/ (observed path).
+            - name: {{ .Values.dnsSeeder.name }}-cache
+              mountPath: /cache
+          resources:
+            {{- toYaml .Values.dnsSeeder.resources | nindent 12 }}
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.dnsSeeder.name }}-cache
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.dnsSeeder.volumes.cache.size }}
+        {{- if .Values.dnsSeeder.storageClassName }}
+        storageClassName: {{ .Values.dnsSeeder.storageClassName }}
+        {{- end }}
+{{- end }}

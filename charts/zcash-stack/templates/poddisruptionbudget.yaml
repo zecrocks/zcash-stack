@@ -13,3 +13,7 @@
 ---
 {{ include "zcash-stack.pdb" (dict "replicas" .Values.zaino.replicas "name" .Values.zaino.name "minAvailable" .Values.zaino.pdb.minAvailable) }}
 {{- end }}
+{{- if .Values.dnsSeeder.enabled }}
+---
+{{ include "zcash-stack.pdb" (dict "replicas" .Values.dnsSeeder.replicas "name" .Values.dnsSeeder.name "minAvailable" .Values.dnsSeeder.pdb.minAvailable) }}
+{{- end }}

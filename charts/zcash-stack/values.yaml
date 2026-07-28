@@ -572,3 +572,111 @@ tor:
       periodSeconds: 30
       timeoutSeconds: 5
       failureThreshold: 3
+
+dnsSeeder:
+  enabled: false
+  name: dns-seeder
+  # HA: run >=2 across zones behind the LB. Stateless, so pods are interchangeable.
+  replicas: 1
+  # PDB only renders when replicas > 1. minAvailable must stay < replicas or it
+  # blocks all voluntary drains (Autopilot node upgrades).
+  pdb:
+    minAvailable: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+  image:
+    repository: zfnd/dnsseeder
+    tag: v1.6.1
+    hash: 11abd347213888a2090b802ccf150237490c26167376166ffa077513d24f1216
+    pullPolicy: IfNotPresent
+  # Servable peers per zone required for /ready (ZEEDER__HEALTH__READY_THRESHOLD).
+  # zeeder's own default is 1, which lets a pod with a SINGLE servable peer stay in the
+  # LB and answer queries with one record. Raise it so a starved pod leaves rotation.
+  # CAUTION: a pod that can never reach the threshold stays NotReady forever, and a
+  # NotReady pod BLOCKS all further StatefulSet rollouts.
+  readyThreshold: 1
+  # Never co-schedule with a P2P full node. zebra/zakura can exhaust a node's ephemeral
+  # ports (zakura's iroh/QUIC stack logs EADDRNOTAVAIL "Cannot assign requested
+  # address"), which starves the seeder's crawler: every initial handshake fails and it
+  # ends up serving 1-2 records with no way to recover short of a restart.
+  # NOTE: GKE Autopilot REFUSES pod anti-affinity when the CPU request is under 500m,
+  # and enforces >=1:1 GiB per vCPU, so on Autopilot also raise resources.requests to
+  # cpu 500m / memory 512Mi. Leave disabled on single-tenant metal.
+  antiAffinity:
+    enabled: false
+    apps: [zakura, zebra, zaino]
+    # Namespaces to match those apps in. Empty = this release's namespace only.
+    namespaces: []
+    topologyKey: kubernetes.io/hostname
+  dns:
+    # Container listens here (unprivileged); the Service maps :53 -> this.
+    listenPort: 1053
+  # Persistent peer cache (StatefulSet volumeClaimTemplate) so pods restart warm.
+  # The cache is tiny (<20Mi) but GKE PD minimums round up; size is configurable.
+  storageClassName: ""
+  volumes:
+    cache:
+      size: 1Gi
+  zones:
+    mainnet:
+      enabled: true
+      domain: seeder.zec.rocks
+      # NOTE: nameserver must be OUTSIDE its own zone domain.
+      nameserver: ns-seeder.zec.rocks
+      ttl: 600
+    testnet:
+      enabled: true
+      domain: seeder.testnet.zec.rocks
+      nameserver: ns-seeder.zec.rocks
+      ttl: 300
+  # Per-IP rate limiting. NOTE: the required Cluster-policy LB SNATs every query
+  # to a node IP, so zeeder sees a handful of node IPs, not real clients - per-IP
+  # limiting then only throttles aggregated traffic and protects nothing. Set
+  # effectively unlimited. zeeder has no disable env (0 is rejected, must be nonzero).
+  rateLimit:
+    queriesPerSecond: 100000
+    burstSize: 100000
+  service:
+    type: LoadBalancer
+    port: 53
+    # One mixed TCP+UDP Service. Set false to split into two Services that share
+    # loadBalancerIP (for clouds that reject a mixed-protocol LB).
+    singleMixedService: true
+    # Reserve a static IP on GKE; leave "" on k3s (klipper assigns the node IP).
+    loadBalancerIP: ""
+    # NOTE: must be Cluster. Local breaks the external UDP path through the GKE
+    # target-pool LB (TCP works, UDP gets no reply -> non-Cloudflare resolvers
+    # SERVFAIL). Tradeoff: client IP is SNATed so zeeder rate-limits per node IP.
+    externalTrafficPolicy: Cluster
+    # GKE mixed TCP+UDP: cloud.google.com/l4-rbs: "enabled"
+    annotations: {}
+  # Extra ZEEDER__* overrides, e.g. ZEEDER__RATE_LIMIT__ENABLED: "true".
+  env: {}
+  # zeeder idles tiny but the ops docs cite 100-200Mi under real load + full peer
+  # sets. Request >= steady-state so QoS is stable; limit gives OOM headroom. No CPU
+  # limit (burstable). cpu:mem request ratio stays under Autopilot's 6.5 GiB/vCPU.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+  probes:
+    startup:
+      enabled: true
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 30
+    readiness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1

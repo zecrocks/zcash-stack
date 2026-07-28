@@ -48,3 +48,14 @@ Useful commands:
   kubectl get pods
   kubectl logs -f statefulset/{{ .Values.lightwalletd.name }}
   kubectl rollout status statefulset/{{ .Values.lightwalletd.name }}
+{{- if .Values.dnsSeeder.enabled }}
+DNS seeder (zeeder) is deployed. Get its external IP:
+  kubectl get svc -l app={{ .Values.dnsSeeder.name }}
+Then delegate at your DNS host: an A record for each zone's nameserver -> that IP,
+and an NS record for each zone domain -> the nameserver. Test the IP directly first:
+{{- range $net, $zone := .Values.dnsSeeder.zones }}
+{{- if $zone.enabled }}
+  dig @<ip> {{ $zone.domain }} A ; dig +tcp @<ip> {{ $zone.domain }} A ; dig @<ip> {{ $zone.domain }} SOA
+{{- end }}
+{{- end }}
+{{- end }}
