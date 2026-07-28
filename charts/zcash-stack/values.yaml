@@ -147,12 +147,14 @@ lightwalletd:
   image:
     # Stock upstream lightwalletd. Block ingest is serial, so building a cache from
     # scratch is slow; seed it with initSnapshot below instead.
+    # v0.5.1 detects a zakura backend, so it works against zakura as well as
+    # zebrad and zcashd. Same cache start height as v0.5.0, so no re-index.
     # EDGE CONTRACT: this backend must answer non-gRPC `OPTIONS /` with 415 and
     # /healthz with 200/503 (the Fly HAProxy edge health-checks `expect 415`).
     # Don't add a website / change the 415 response here while an HAProxy edge checks it.
     repository: electriccoinco/lightwalletd
-    tag: v0.5.0
-    hash: f2900ca478ff5fb127d4859a8694b4d8839d263c189bf4a9e9437a85c9165470
+    tag: v0.5.1
+    hash: 5cc90c7d517637d7132cc4132ba6fdec8c621fa7e902a008e39a895e42549456
     pullPolicy: IfNotPresent
 
   # Parallel ingestor tuning (env vars). Empty = binary defaults (workers=8, window=64).
