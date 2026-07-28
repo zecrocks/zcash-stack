@@ -30,6 +30,10 @@ spec:
             "claimName" "data"
             "doChown" (not .Values.global.fsGroup.enabled)
             "adoptExisting" .Values.lightwalletd.initSnapshot.adoptExisting
+            "compression" .Values.lightwalletd.initSnapshot.compression
+            "stripComponents" .Values.lightwalletd.initSnapshot.stripComponents
+            "resumable" .Values.lightwalletd.initSnapshot.resumable
+            "sha256" .Values.lightwalletd.initSnapshot.sha256
             "global" .Values.global) | nindent 6 }}
       {{- else if not .Values.global.fsGroup.enabled }}
       {{- include "zcash-stack.setPermissionsInitContainer" (dict
@@ -40,7 +44,7 @@ spec:
       # Wait for the backend RPC node before starting lightwalletd.
       - name: init-rpc
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
-        command: ['sh', '-c', "until nc -zv {{ .Values.lightwalletd.rpcService }}:{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}; do echo waiting for rpc; sleep 2; done"]
+        command: ['sh', '-c', "until nc -zv {{ .Values.lightwalletd.rpcService }}:{{ if eq (include "zcash-stack.testnet" $) "true" }}18232{{ else }}8232{{ end }}; do echo waiting for rpc; sleep 2; done"]
       containers:
       - name: lightwalletd
         image: {{ .Values.lightwalletd.image.repository }}:{{ .Values.lightwalletd.image.tag }}{{ with .Values.lightwalletd.image.hash }}@sha256:{{ . }}{{ end }}

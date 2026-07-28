@@ -1,0 +1,20 @@
+{{- if .Values.zakura.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zakura.name }}
+spec:
+  type: {{ .Values.zakura.service.type }}
+  # ClientIP pins each consumer to one zakura replica; set None to round-robin.
+  sessionAffinity: {{ .Values.zakura.service.sessionAffinity | default "ClientIP" }}
+  {{- if .Values.zakura.service.publishNotReadyAddresses }}
+  publishNotReadyAddresses: true
+  {{- end }}
+  selector:
+    app: {{ .Values.zakura.name }}
+  ports:
+    - port: {{ if .Values.zakura.testnet }}18232{{ else }}8232{{ end }}
+      targetPort: {{ if .Values.zakura.testnet }}18232{{ else }}8232{{ end }}
+      protocol: TCP
+      name: rpc
+{{- end }}

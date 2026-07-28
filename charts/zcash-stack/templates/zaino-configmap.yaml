@@ -6,13 +6,13 @@ metadata:
 data:
   zainod.toml: |
     backend = "fetch"
-    network = "{{ if .Values.zebra.testnet }}Testnet{{ else }}Mainnet{{ end }}"
+    network = "{{ if eq (include "zcash-stack.testnet" $) "true" }}Testnet{{ else }}Mainnet{{ end }}"
 
     [grpc_settings]
     listen_address = "0.0.0.0:{{ .Values.zaino.service.port }}"
 
     [validator_settings]
-    validator_jsonrpc_listen_address = "{{ .Values.zaino.rpcService }}:{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}"
+    validator_jsonrpc_listen_address = "{{ .Values.zaino.rpcService }}:{{ if eq (include "zcash-stack.testnet" $) "true" }}18232{{ else }}8232{{ end }}"
 
     [service]
     timeout = {{ .Values.zaino.config.service.timeout }}

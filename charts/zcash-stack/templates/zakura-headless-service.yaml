@@ -1,0 +1,16 @@
+{{- if .Values.zakura.enabled }}
+# Headless service for stable per-replica DNS (zakura-0.zakura-service.<ns>.svc).
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.zakura.name }}-service
+spec:
+  clusterIP: None
+  selector:
+    app: {{ .Values.zakura.name }}
+  ports:
+    - port: {{ if .Values.zakura.testnet }}18232{{ else }}8232{{ end }}
+      targetPort: {{ if .Values.zakura.testnet }}18232{{ else }}8232{{ end }}
+      protocol: TCP
+      name: rpc
+{{- end }}

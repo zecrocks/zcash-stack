@@ -57,6 +57,10 @@ spec:
             "claimName" (printf "%s-data" .Values.zebra.name)
             "doChown" (not .Values.global.fsGroup.enabled)
             "adoptExisting" .Values.zebra.initSnapshot.adoptExisting
+            "compression" .Values.zebra.initSnapshot.compression
+            "stripComponents" .Values.zebra.initSnapshot.stripComponents
+            "resumable" .Values.zebra.initSnapshot.resumable
+            "sha256" .Values.zebra.initSnapshot.sha256
             "global" .Values.global) | nindent 6 }}
       {{- else if not .Values.global.fsGroup.enabled }}
       {{- include "zcash-stack.setPermissionsInitContainer" (dict

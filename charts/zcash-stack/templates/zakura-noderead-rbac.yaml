@@ -1,0 +1,29 @@
+{{- if and .Values.zakura.enabled .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+# Lets the zakura init container read its node's ExternalIP for ZAKURA_NETWORK__EXTERNAL_ADDR.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.zakura.name }}-noderead
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Values.zakura.name }}-noderead
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Values.zakura.name }}-noderead
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Namespace }}-{{ .Values.zakura.name }}-noderead
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.zakura.name }}-noderead
+  namespace: {{ .Release.Namespace }}
+{{- end }}

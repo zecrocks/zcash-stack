@@ -42,7 +42,7 @@ spec:
       {{- end }}
       - name: init-rpc
         image: busybox:{{ .Values.global.images.busybox.tag }}@sha256:{{ .Values.global.images.busybox.hash }}
-        command: ['sh', '-c', "until nc -zv {{ .Values.zaino.rpcService }}:{{ if .Values.zebra.testnet }}18232{{ else }}8232{{ end }}; do echo waiting for rpc; sleep 2; done"]
+        command: ['sh', '-c', "until nc -zv {{ .Values.zaino.rpcService }}:{{ if eq (include "zcash-stack.testnet" $) "true" }}18232{{ else }}8232{{ end }}; do echo waiting for rpc; sleep 2; done"]
       containers:
       - name: zaino
         image: {{ .Values.zaino.image.repository }}:{{ .Values.zaino.image.tag }}{{ with .Values.zaino.image.hash }}@sha256:{{ . }}{{ end }}

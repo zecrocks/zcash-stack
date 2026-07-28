@@ -67,9 +67,18 @@ zebra:
     # have a single top-level dir (extracted with --strip-components=1).
     enabled: false
     url: https://link.storjshare.io/s/jvsl24cnnc6o5xhd2zqn5svvuwda/snapshots/zebra/zebra-2026-06-03.tar?download=1
+    # Testnet equivalent (set testnet: true and swap url to this). Same shape as the
+    # mainnet tar: plain tar, one top-level dir, so the defaults below apply as-is.
+    # https://link.storjshare.io/s/jvxtmwlbmthdpebml2urx4li3w7q/nodedumps/zec/zebra-testnet-2026-07-02.tar?download=1
     # A pre-existing, unmarked volume is normally adopted as-is. Set false to wipe and
     # restore it instead, for when the on-disk data is unusable by the running image.
     adoptExisting: true
+    # Optional, for snapshots that need more than plain-tar streaming. Unset = old
+    # behaviour (stream wget|tar, strip 1). See the zakura block for what these do.
+    compression: ""
+    stripComponents: 1
+    resumable: false
+    sha256: ""
 
   additionalEnv: {}
 
@@ -127,6 +136,135 @@ zebra:
       # tight for testnet: blocks arrive in bursts, so /ready can flap, and lwd
       # (which Fatals on an RPC error) dies when all replicas dip at once.
       maxBlocksBehind: ""
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      periodSeconds: 30
+      timeoutSeconds: 10
+      failureThreshold: 3
+      successThreshold: 1
+
+# Zakura is a zebra fork, so it is a drop-in backend for lightwalletd/zaino, not a
+# zaino replacement. Point lightwalletd.rpcService / zaino.rpcService at it by name.
+zakura:
+  enabled: false
+  name: zakura
+  testnet: false
+  image:
+    repository: zakuracore/zakura
+    tag: 1.0.4
+    hash: 2391c039349c0f791208688880af1fd40173f99b212e987999d8baa5f7675d12
+    pullPolicy: IfNotPresent
+
+  # Each replica is a full node with its own PVC. Scale for redundancy, not load.
+  replicas: 1
+  podManagementPolicy: Parallel
+  minReadySeconds: 30
+  pdb:
+    minAvailable: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+
+  # archive keeps every tx body; pruned drops them outside txRetention blocks and is
+  # ONE-WAY (a pruned db can't be reopened as archive). Must match the snapshot family.
+  storageMode: archive
+  txRetention: 10000
+
+  initSnapshot:
+    # zakura's tars are zstd and rooted at state/, hence compression + stripComponents 0.
+    enabled: false
+    url: https://zakura.valargroup.dev/mainnet/zakura-mainnet-20260727T140819Z-3426994.tar.zst
+    compression: zstd
+    stripComponents: 0
+    # aria2c to a scratch file instead of streaming. Streaming cannot resume, and the
+    # ~250Gi archive reliably drops its connection partway, which wipes and restarts
+    # the whole transfer. Costs disk: size the volume for archive PLUS extracted data.
+    resumable: true
+    # Verified by aria2 after download. From the snapshots.json entry for this url.
+    sha256: bb121a02b8fdcca5d4ae1009ffcfc0401b02dddd361c00b3041b6b6616e0cbe4
+    adoptExisting: true
+
+  # Experimental iroh/QUIC P2P v2 on UDP 8234 (same port on both networks). zakura
+  # ships it off on mainnet, dual on testnet; the chart pins it so the network can't
+  # decide for us. Off here, on in deploy/.
+  p2pV2:
+    enabled: false
+    # dual keeps the legacy TCP stack up alongside v2. NOTE: mode zakura is v2-only and
+    # /healthy + /ready read the LEGACY address book, so k8s probes never pass.
+    mode: dual
+    # Container AND host port. zakura advertises the v2 endpoint as external_addr's IP
+    # plus this port, so the two must match; change it when another node on the same
+    # host already holds 8234.
+    listenPort: 8234
+    # nodeid@host:8234. Empty uses zakura's per-network defaults. Cannot be set by env
+    # var (zakura's env source has no list separator), so it has to live in the config.
+    bootstrapPeers: []
+    maxConnections: 256
+    maxConnectionsPerIp: 16
+
+  additionalEnv: {}
+
+  # Accept inbound P2P via hostPort (one replica per node; not on GKE Autopilot).
+  # Opens the v2 UDP port too when p2pV2 is enabled.
+  p2pPublic:
+    enabled: false
+    # hostIP | nodeExternalIP | loadBalancer (see README).
+    externalAddrFrom: hostIP
+    # Required when externalAddrFrom: loadBalancer.
+    externalIP: ""
+    # "" uses the network's default P2P port. Override when a zebra (or another zakura)
+    # on the same node already holds it: a hostPort collision leaves the pod Pending.
+    # The advertised external_addr follows this, so inbound peers still reach us.
+    hostPort: ""
+
+  # REPLACES zakura's default DNS seeders, does not add to them. host:port strings.
+  initialPeers: []
+
+  # Pin to a node when the StorageClass is node-bound (k3s local-path) and only some
+  # nodes have room for an archive state dir.
+  nodeSelector: {}
+
+  # "" uses the cluster default StorageClass. Immutable on an existing StatefulSet.
+  storageClassName: ""
+  volumes:
+    data:
+      size: 600Gi
+
+  service:
+    type: ClusterIP
+    # Pin each lightwalletd to one replica's chain state (None = round-robin).
+    sessionAffinity: ClientIP
+    publishNotReadyAddresses: false
+
+  resources:
+    requests:
+      cpu: 350m
+      memory: 2Gi
+    limits:
+      memory: 8Gi
+
+  # zakura serves /ready and /healthy on :8081. NOTE: the health server is disabled
+  # unless [health] listen_addr is set, which the chart always renders.
+  probes:
+    startup:
+      enabled: true
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 240
+    readiness:
+      enabled: true
+      # /ready returns 200 on testnet unless this is set; keep true so the gate also
+      # applies on testnet. No effect when testnet=false.
+      enforceOnTestnet: true
+      # zakura's own default is 2, which is tight for testnet: blocks arrive in bursts
+      # so /ready flaps, and lwd Fatals on an RPC error when all replicas dip at once.
+      maxBlocksBehind: ""
+      # zakura refuses to report healthy below this many legacy peers.
+      minConnectedPeers: 1
       periodSeconds: 10
       timeoutSeconds: 5
       failureThreshold: 3

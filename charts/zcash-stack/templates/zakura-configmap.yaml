@@ -1,0 +1,84 @@
+{{- if .Values.zakura.enabled }}
+{{- $tn := .Values.zakura.testnet }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.zakura.name }}-config
+data:
+  # NOTE: zakura parses this with deny_unknown_fields, so an unknown key is fatal.
+  # zebra's [notify] section does not exist here.
+  zakura.toml: |
+    [network]
+    network = "{{ if $tn }}Testnet{{ else }}Mainnet{{ end }}"
+    listen_addr = "0.0.0.0:{{ if $tn }}18233{{ else }}8233{{ end }}"
+    {{- if .Values.zakura.p2pV2.enabled }}
+    p2p_stack = "{{ .Values.zakura.p2pV2.mode }}"
+    {{- else }}
+    p2p_stack = "legacy"
+    {{- end }}
+    # Defaults to ~/.zakura, which is ephemeral in a pod, so the v2 node_id would
+    # change every restart. NOTE: a snapshot restore wipes this along with the state.
+    identity_dir = "/var/cache/zakura/identity"
+    {{- with .Values.zakura.initialPeers }}
+    {{ if $tn }}initial_testnet_peers{{ else }}initial_mainnet_peers{{ end }} = [
+    {{- range . }}
+        "{{ . }}",
+    {{- end }}
+    ]
+    {{- end }}
+    {{- if .Values.zakura.p2pV2.enabled }}
+
+    [network.zakura]
+    # QUIC/UDP, same port on both networks (it does not follow the 18233 testnet offset).
+    listen_addr = "0.0.0.0:{{ .Values.zakura.p2pV2.listenPort | default 8234 }}"
+    max_connections = {{ .Values.zakura.p2pV2.maxConnections }}
+    max_connections_per_ip = {{ .Values.zakura.p2pV2.maxConnectionsPerIp }}
+    {{- with .Values.zakura.p2pV2.bootstrapPeers }}
+    bootstrap_peers = [
+    {{- range . }}
+        "{{ . }}",
+    {{- end }}
+    ]
+    {{- end }}
+    {{- end }}
+
+    [state]
+    # Also set as ZAKURA_STATE__CACHE_DIR: the image entrypoint exports a default that
+    # would otherwise win, since env beats the config file.
+    cache_dir = "/var/cache/zakura"
+    ephemeral = false
+    {{- if eq .Values.zakura.storageMode "pruned" }}
+    [state.storage_mode.pruned]
+    tx_retention = {{ .Values.zakura.txRetention }}
+    {{- else }}
+    storage_mode = "archive"
+    {{- end }}
+
+    [consensus]
+    checkpoint_sync = true
+
+    [rpc]
+    # RPC is disabled unless listen_addr is set.
+    listen_addr = "0.0.0.0:{{ if $tn }}18232{{ else }}8232{{ end }}"
+    # Cookie auth can't be shared across pods; lwd/zaino creds are then ignored.
+    enable_cookie_auth = false
+
+    [health]
+    # The health server is disabled unless listen_addr is set.
+    listen_addr = "0.0.0.0:8081"
+    min_connected_peers = {{ .Values.zakura.probes.readiness.minConnectedPeers }}
+    {{- if and $tn .Values.zakura.probes.readiness.enforceOnTestnet }}
+    # Without this, /ready always returns 200 on testnet (readiness gate is a no-op).
+    enforce_on_test_networks = true
+    {{- end }}
+    {{- with .Values.zakura.probes.readiness.maxBlocksBehind }}
+    # How many blocks behind the tip still counts as ready. zakura default is 2.
+    ready_max_blocks_behind = {{ . }}
+    {{- end }}
+
+    [metrics]
+    endpoint_addr = "0.0.0.0:8080"
+
+    [tracing]
+    use_color = false
+{{- end }}

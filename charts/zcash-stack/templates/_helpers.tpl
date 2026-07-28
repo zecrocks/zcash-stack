@@ -1,6 +1,23 @@
 {{/* Shared template helpers for the zcash-stack chart. */}}
 
 {{/*
+zcash-stack.testnet - "true"/"false" for the release's network. lightwalletd, zaino and
+explorer derive the backend RPC port from this. zebra wins when enabled so existing
+releases render unchanged; a zakura-only release falls back to zakura.testnet.
+Usage:
+  {{ if eq (include "zcash-stack.testnet" .) "true" }}18232{{ else }}8232{{ end }}
+*/}}
+{{- define "zcash-stack.testnet" -}}
+{{- if .Values.zebra.enabled -}}
+{{ .Values.zebra.testnet }}
+{{- else if .Values.zakura.enabled -}}
+{{ .Values.zakura.testnet }}
+{{- else -}}
+{{ .Values.zebra.testnet }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 zcash-stack.podSecurityContext - pod securityContext that sets volume ownership
 via fsGroup (OnRootMismatch) instead of a root chown init container.
 Usage:
@@ -20,6 +37,10 @@ container (markers: .snapshot-complete / .snapshot-inprogress). A non-empty unma
 volume is adopted (never wiped) unless adoptExisting is false, which wipes and
 restores instead. Downloader by URL scheme: gs:// via gsutil on the cloud-sdk image,
 http(s):// via wget on alpine.
+Optional: compression "zstd" (https only, adds zstd via apk), stripComponents (default 1;
+zakura's tar is rooted at state/ so it passes 0), resumable (aria2c to a scratch file on
+the volume instead of streaming, so a dropped connection resumes instead of restarting;
+needs room for the archive AND the extracted data), sha256 (verified when resumable).
 Usage:
   {{- include "zcash-stack.restoreInitContainer" (dict
         "url" .Values.zebra.initSnapshot.url
@@ -31,6 +52,12 @@ Usage:
 */}}
 {{- define "zcash-stack.restoreInitContainer" -}}
 {{- $isGcs := hasPrefix "gs://" .url -}}
+{{- $zstd := eq (toString .compression) "zstd" -}}
+{{- if and $zstd $isGcs }}{{ fail "initSnapshot: compression zstd is only supported for http(s) URLs (the cloud-sdk image has no zstd)" }}{{ end -}}
+{{- $strip := 1 -}}
+{{- if not (kindIs "invalid" .stripComponents) }}{{- $strip = .stripComponents }}{{- end -}}
+{{- $resumable := eq (toString .resumable) "true" -}}
+{{- if and $resumable $isGcs }}{{ fail "initSnapshot: resumable is only supported for http(s) URLs" }}{{ end -}}
 - name: restore-snapshot
   {{- if $isGcs }}
   image: {{ .global.images.cloudSdk.repository }}:{{ .global.images.cloudSdk.tag }}@sha256:{{ .global.images.cloudSdk.hash }}
@@ -40,8 +67,10 @@ Usage:
   {{- /* Wiping an adopted dataset means unlinking files the previous image wrote as
          root, which the data uid can't do under fsGroup, so wipe as root and chown back. */}}
   {{- $asRoot := or .doChown (eq (toString .adoptExisting) "false") }}
+  {{- /* zstd/aria2 need apk, which needs root. Kept separate from $asRoot so it doesn't also
+         trigger a pointless chown -R over a few hundred GiB of restored state. */}}
   securityContext:
-    {{- if $asRoot }}
+    {{- if or $asRoot $zstd $resumable }}
     runAsUser: 0
     {{- else }}
     runAsUser: {{ .uid }}
@@ -66,15 +95,46 @@ Usage:
       UID_OWNER="{{ .uid }}"
       COMPLETE="$DATA_DIR/.snapshot-complete"
       INPROGRESS="$DATA_DIR/.snapshot-inprogress"
+      {{- if $resumable }}
+      DL_DIR="$DATA_DIR/.snapshot-dl"
+      DL_FILE="$DL_DIR/snapshot.dat"
+      SHA256="{{ .sha256 }}"
+      {{- end }}
+      {{- if $resumable }}
+      is_empty() { [ -z "$(ls -A "$DATA_DIR" 2>/dev/null | grep -vE '^(lost\+found|\.snapshot-dl)$' || true)" ]; }
+      {{- else }}
       is_empty() { [ -z "$(ls -A "$DATA_DIR" 2>/dev/null | grep -v '^lost+found$' || true)" ]; }
+      {{- end }}
       restore() {
         echo "Restoring snapshot from $URL ...";
-        find "$DATA_DIR" -mindepth 1 -maxdepth 1 ! -name 'lost+found' -exec rm -rf {} + ;
+        {{- if $resumable }}
+        apk add --no-cache aria2 {{ if $zstd }}zstd{{ end }};
+        {{- else if $zstd }}
+        apk add --no-cache zstd;
+        {{- end }}
+        {{- /* The partial download lives under $DATA_DIR, so it must survive the wipe
+               or every retry would start from zero, which is the bug this fixes. */}}
+        find "$DATA_DIR" -mindepth 1 -maxdepth 1 ! -name 'lost+found' {{ if $resumable }}! -name '.snapshot-dl' {{ end }}-exec rm -rf {} + ;
         : > "$INPROGRESS";
-        {{- if $isGcs }}
-        gsutil -q -o "GSUtil:state_dir=/tmp/gsutil" cp "$URL" - | tar --strip-components=1 -xf - -C "$DATA_DIR";
+        {{- if $resumable }}
+        mkdir -p "$DL_DIR";
+        # -c resumes an interrupted transfer across container restarts; aria2 also
+        # retries individual segments, which plain wget streaming cannot do.
+        aria2c -c -x8 -s8 -j1 --max-tries=0 --retry-wait=10 --file-allocation=none \
+          --summary-interval=60 --console-log-level=warn \
+          {{ if .sha256 }}--checksum=sha-256="$SHA256" {{ end }}-d "$DL_DIR" -o snapshot.dat "$URL";
+        {{- if $zstd }}
+        zstd -dc "$DL_FILE" | tar {{ if $strip }}--strip-components={{ $strip }} {{ end }}-xf - -C "$DATA_DIR";
         {{- else }}
-        wget -qO- "$URL" | tar --strip-components=1 -xf - -C "$DATA_DIR";
+        tar {{ if $strip }}--strip-components={{ $strip }} {{ end }}-xf "$DL_FILE" -C "$DATA_DIR";
+        {{- end }}
+        rm -rf "$DL_DIR";
+        {{- else if $isGcs }}
+        gsutil -q -o "GSUtil:state_dir=/tmp/gsutil" cp "$URL" - | tar {{ if $strip }}--strip-components={{ $strip }} {{ end }}-xf - -C "$DATA_DIR";
+        {{- else if $zstd }}
+        wget -qO- "$URL" | zstd -dc | tar {{ if $strip }}--strip-components={{ $strip }} {{ end }}-xf - -C "$DATA_DIR";
+        {{- else }}
+        wget -qO- "$URL" | tar {{ if $strip }}--strip-components={{ $strip }} {{ end }}-xf - -C "$DATA_DIR";
         {{- end }}
         rm -f "$INPROGRESS";
         : > "$COMPLETE";

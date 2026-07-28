@@ -1,0 +1,201 @@
+{{- if .Values.zakura.enabled }}
+{{- $tn := .Values.zakura.testnet }}
+{{- $p2p := ternary 18233 8233 $tn }}
+{{- /* Host-side ports, overridable so a zebra on the same node can keep the defaults. */}}
+{{- $hp := .Values.zakura.p2pPublic.hostPort | default $p2p }}
+{{- $hp2 := .Values.zakura.p2pV2.listenPort | default 8234 }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.zakura.name }}
+spec:
+  serviceName: {{ .Values.zakura.name }}-service
+  replicas: {{ .Values.zakura.replicas }}
+  podManagementPolicy: {{ .Values.zakura.podManagementPolicy | default "Parallel" }}
+  minReadySeconds: {{ .Values.zakura.minReadySeconds | default 0 }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ .Values.zakura.name }}
+  template:
+    metadata:
+      annotations:
+        # Roll the pod when zakura.toml changes (config is read only at startup).
+        checksum/config: {{ include (print $.Template.BasePath "/zakura-configmap.yaml") . | sha256sum }}
+      labels:
+        app: {{ .Values.zakura.name }}
+    spec:
+      {{- if and .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+      serviceAccountName: {{ .Values.zakura.name }}-noderead
+      {{- end }}
+      # Service-link env vars break the entrypoint
+      enableServiceLinks: false
+      {{- /* The image starts as root and setpriv-drops to 10001, so no runAsUser here. */}}
+      {{- include "zcash-stack.podSecurityContext" (dict "uid" 10001 "global" .Values.global) | nindent 6 }}
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.zakura.topologySpread "name" .Values.zakura.name) | nindent 6 }}
+      {{- with .Values.zakura.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
+      initContainers:
+      {{- if and .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+      # Read this pod's node ExternalIP so zakura can advertise a reachable P2P address.
+      - name: detect-public-ip
+        image: {{ .Values.global.images.kubectl.repository }}:{{ .Values.global.images.kubectl.tag }}
+        command: ["/bin/sh", "-c"]
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        args:
+          - |
+            set -e
+            IP="$(kubectl get node "$NODE_NAME" -o jsonpath='{.status.addresses[?(@.type=="ExternalIP")].address}')"
+            printf '%s' "$IP" > /shared/pubip
+            echo "node $NODE_NAME ExternalIP: $IP"
+        volumeMounts:
+        - name: zakura-pubip
+          mountPath: /shared
+      {{- end }}
+      {{- if .Values.zakura.initSnapshot.enabled }}
+      {{- include "zcash-stack.restoreInitContainer" (dict
+            "url" .Values.zakura.initSnapshot.url
+            "uid" "10001"
+            "claimName" (printf "%s-data" .Values.zakura.name)
+            "doChown" (not .Values.global.fsGroup.enabled)
+            "adoptExisting" .Values.zakura.initSnapshot.adoptExisting
+            "compression" .Values.zakura.initSnapshot.compression
+            "stripComponents" .Values.zakura.initSnapshot.stripComponents
+            "resumable" .Values.zakura.initSnapshot.resumable
+            "sha256" .Values.zakura.initSnapshot.sha256
+            "global" .Values.global) | nindent 6 }}
+      {{- else if not .Values.global.fsGroup.enabled }}
+      {{- include "zcash-stack.setPermissionsInitContainer" (dict
+            "uid" "10001"
+            "claimName" (printf "%s-data" .Values.zakura.name)
+            "global" .Values.global) | nindent 6 }}
+      {{- end }}
+      containers:
+      - name: zakura
+        image: {{ .Values.zakura.image.repository }}:{{ .Values.zakura.image.tag }}{{ with .Values.zakura.image.hash }}@sha256:{{ . }}{{ end }}
+        imagePullPolicy: {{ .Values.zakura.image.pullPolicy }}
+        {{- /* Keep the image's ENTRYPOINT (entrypoint.sh) and CMD (zakurad): it selects
+               the config via CONFIG_FILE_PATH and setpriv-drops to uid 10001. */}}
+        {{- if and .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            export ZAKURA_NETWORK__EXTERNAL_ADDR="$(cat /shared/pubip):{{ $hp }}"
+            exec entrypoint.sh zakurad
+        {{- end }}
+        env:
+        - name: CONFIG_FILE_PATH
+          value: /etc/zakura/zakura.toml
+        {{- /* The entrypoint exports defaults for these two, and env beats the config
+               file, so without them state would land on the pod's ephemeral disk. */}}
+        - name: ZAKURA_STATE__CACHE_DIR
+          value: /var/cache/zakura
+        - name: ZAKURA_RPC__COOKIE_DIR
+          value: /var/cache/zakura
+        {{- if and .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "hostIP") }}
+        - name: NODE_PUBLIC_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        - name: ZAKURA_NETWORK__EXTERNAL_ADDR
+          value: "$(NODE_PUBLIC_IP):{{ $hp }}"
+        {{- else if and .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "loadBalancer") }}
+        - name: ZAKURA_NETWORK__EXTERNAL_ADDR
+          value: "{{ required "zakura.p2pPublic.externalIP is required when externalAddrFrom=loadBalancer" .Values.zakura.p2pPublic.externalIP }}:{{ $hp }}"
+        {{- end }}
+        {{- range $k, $v := .Values.zakura.additionalEnv }}
+        - name: {{ $k }}
+          value: {{ $v | quote }}
+        {{- end }}
+        ports:
+        - containerPort: {{ if $tn }}18232{{ else }}8232{{ end }}
+          name: zakura-rpc
+        - containerPort: {{ $p2p }}
+          name: zakura-p2p
+          {{- if and .Values.zakura.p2pPublic.enabled (ne .Values.zakura.p2pPublic.externalAddrFrom "loadBalancer") }}
+          # hostPort for inbound peers; one replica per node, not on GKE Autopilot.
+          hostPort: {{ $hp }}
+          {{- end }}
+        {{- if .Values.zakura.p2pV2.enabled }}
+        - containerPort: {{ $hp2 }}
+          protocol: UDP
+          name: zakura-p2p2
+          {{- if and .Values.zakura.p2pPublic.enabled (ne .Values.zakura.p2pPublic.externalAddrFrom "loadBalancer") }}
+          hostPort: {{ $hp2 }}
+          {{- end }}
+        {{- end }}
+        - containerPort: 8080
+          name: zakura-metrics
+        {{- if or .Values.zakura.probes.startup.enabled .Values.zakura.probes.readiness.enabled .Values.zakura.probes.liveness.enabled }}
+        - containerPort: 8081
+          name: zakura-health
+        {{- end }}
+        {{- if .Values.zakura.probes.startup.enabled }}
+        # Startup gates on /healthy (process up), not /ready (synced-to-tip).
+        startupProbe:
+          httpGet:
+            path: /healthy
+            port: 8081
+          periodSeconds: {{ .Values.zakura.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.zakura.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.zakura.probes.startup.failureThreshold }}
+        {{- end }}
+        {{- if .Values.zakura.probes.readiness.enabled }}
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+          periodSeconds: {{ .Values.zakura.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zakura.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zakura.probes.readiness.failureThreshold }}
+          successThreshold: {{ .Values.zakura.probes.readiness.successThreshold }}
+        {{- end }}
+        {{- if .Values.zakura.probes.liveness.enabled }}
+        livenessProbe:
+          httpGet:
+            path: /healthy
+            port: 8081
+          periodSeconds: {{ .Values.zakura.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.zakura.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.zakura.probes.liveness.failureThreshold }}
+          successThreshold: {{ .Values.zakura.probes.liveness.successThreshold }}
+        {{- end }}
+        volumeMounts:
+        {{- if and .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+        - name: zakura-pubip
+          mountPath: /shared
+        {{- end }}
+        - name: {{ .Values.zakura.name }}-data
+          mountPath: /var/cache/zakura
+        - name: zakura-config
+          mountPath: /etc/zakura
+        resources:
+          {{- toYaml .Values.zakura.resources | nindent 10 }}
+      volumes:
+      {{- if and .Values.zakura.p2pPublic.enabled (eq .Values.zakura.p2pPublic.externalAddrFrom "nodeExternalIP") }}
+      - name: zakura-pubip
+        emptyDir: {}
+      {{- end }}
+      - name: zakura-config
+        configMap:
+          name: {{ .Values.zakura.name }}-config
+  volumeClaimTemplates:
+  - metadata:
+      name: {{ .Values.zakura.name }}-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.zakura.volumes.data.size }}
+      {{- if .Values.zakura.storageClassName }}
+      storageClassName: {{ .Values.zakura.storageClassName }}
+      {{- end }}
+{{- end }}

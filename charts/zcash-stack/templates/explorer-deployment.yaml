@@ -65,7 +65,7 @@ spec:
             - name: ZCASHD_HOSTNAME
               value: "{{ .Values.explorer.backend.host | default .Values.zebra.name }}"
             - name: ZCASHD_PORT
-              value: "{{ .Values.explorer.backend.port | default (ternary 18232 8232 .Values.zebra.testnet) }}"
+              value: "{{ .Values.explorer.backend.port | default (ternary 18232 8232 (eq (include "zcash-stack.testnet" $) "true")) }}"
             - name: ZCASHD_USERNAME
               value: "{{ .Values.rpc.credentials.rpcUser }}"
             - name: ZCASHD_PASSWORD
