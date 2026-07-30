@@ -3,6 +3,15 @@
 # In this file, we bring up a Caddy HTTP server. We like Caddy for
 # the ease with which it gives us the ability to configure a TLS
 # endpoint for our node, since it has a built-in Let's Encrypt tool.
+#
+# Caddy terminates TLS on :443 and reverse-proxies to lightwalletd's gRPC
+# endpoint. Use it as an overlay on top of compose.yaml, which provides the
+# lightwalletd service:
+#
+#   docker compose -f compose.yaml -f compose.caddy.yaml up --detach
+#
+# Set LIGHTWALLETD_DOMAIN (a public DNS name pointing at this host) and
+# CADDY_EMAIL (your ACME account email) in .env before bringing it up.
 ---
 services:
   caddy:
@@ -19,15 +28,6 @@ services:
       - ./data/caddy_config:/config
     environment:
       - CADDY_EMAIL=${CADDY_EMAIL:-example@domain.com}
-    depends_on:
-      - lightwalletd 
       - LIGHTWALLETD_DOMAIN=${LIGHTWALLETD_DOMAIN:-localhost}
     depends_on:
-      - lightwalletd 
-    networks:
-      - zcash-network
-
-networks:
-  zcash-network:
-    external: true
-    name: zcash-network 
+      - lightwalletd
