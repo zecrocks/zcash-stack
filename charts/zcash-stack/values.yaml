@@ -291,8 +291,8 @@ lightwalletd:
     # /healthz with 200/503 (the Fly HAProxy edge health-checks `expect 415`).
     # Don't add a website / change the 415 response here while an HAProxy edge checks it.
     repository: electriccoinco/lightwalletd
-    tag: v0.5.1
-    hash: 5cc90c7d517637d7132cc4132ba6fdec8c621fa7e902a008e39a895e42549456
+    tag: v0.5.2
+    hash: 02e9cd2dce3b4338f4723ffb7845da1ecea90631b2ed9f50894b1b3816576c76
     pullPolicy: IfNotPresent
 
   # Parallel ingestor tuning (env vars). Empty = binary defaults (workers=8, window=64).
