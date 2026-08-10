@@ -154,9 +154,12 @@ zakura:
   name: zakura
   testnet: false
   image:
+    # 1.1.0 keeps state format 28.0.3, so it reopens a 1.0.4 cache in place.
+    # Config schema is unchanged; ZakuradConfig is deny_unknown_fields, so check
+    # that before bumping. Also ships zakura-prune-state / zakura-rollback-state.
     repository: zakuracore/zakura
-    tag: 1.0.4
-    hash: 2391c039349c0f791208688880af1fd40173f99b212e987999d8baa5f7675d12
+    tag: 1.1.0
+    hash: b4705205fd070114e0b509f0d659562ac18f547213f86598adf7acb6efc97ad2
     pullPolicy: IfNotPresent
 
   # Each replica is a full node with its own PVC. Scale for redundancy, not load.
