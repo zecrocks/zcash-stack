@@ -902,8 +902,12 @@ grpcweb:
       timeoutSeconds: 5
       failureThreshold: 3
       successThreshold: 1
-  # Usually shares a host with webzjs: path / -> webzjs, path /mainnet -> grpcweb.
-  # Set tls.secretName to the webzjs cert secret so only one Ingress asks cert-manager.
+  # Sharing a host with webzjs: path / -> webzjs, path /mainnet -> grpcweb, and set
+  # tls.secretName to the webzjs cert secret so only one Ingress asks cert-manager.
+  # Proxy-only host (no webzjs): set path to / so envoy owns the host. It still strips
+  # the /mainnet prefix, and it is then the only thing answering /healthz, which an
+  # external health check usually needs. Leaving path /mainnet there leaves /healthz
+  # with no backend.
   ingress:
     enabled: false
     className: nginx
