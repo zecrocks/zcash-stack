@@ -1,0 +1,15 @@
+{{- if .Values.grpcweb.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.grpcweb.name }}
+spec:
+  type: {{ .Values.grpcweb.service.type }}
+  selector:
+    app: {{ .Values.grpcweb.name }}
+  ports:
+    - port: {{ .Values.grpcweb.service.port }}
+      targetPort: grpcweb-http
+      protocol: TCP
+      name: http
+{{- end }}

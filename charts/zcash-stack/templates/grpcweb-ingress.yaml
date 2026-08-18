@@ -1,0 +1,8 @@
+{{- if .Values.grpcweb.enabled }}
+{{- include "zcash-stack.ingress" (dict
+      "ctx" $
+      "svc" .Values.grpcweb.ingress
+      "name" (printf "%s-%s" .Release.Name .Values.grpcweb.name)
+      "serviceName" .Values.grpcweb.name
+      "servicePort" .Values.grpcweb.service.port) }}
+{{- end }}

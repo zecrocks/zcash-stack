@@ -853,3 +853,131 @@ zecd:
 
 # Optional hidden service exposing lightwalletd/zaino over .onion. tor keeps a root
 # chown/chmod init container (hidden-service dir must be 0700) and skips fsGroup.
+
+# Envoy proxy translating gRPC-web (browser fetch) to gRPC. Browsers cannot speak
+# raw gRPC, so web wallets (WebZjs) need this in front of lightwalletd. CORS is
+# wide open on purpose: a public endpoint any wallet origin can use.
+grpcweb:
+  enabled: false
+  name: grpcweb
+  # gRPC backend to proxy. Empty = this release's lightwalletd Service.
+  backend:
+    host: ""
+    port: ""
+  # URL prefix stripped before forwarding (WebZjs proxy convention).
+  path: /mainnet
+  replicas: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+  image:
+    repository: envoyproxy/envoy
+    tag: v1.33.14
+    hash: f91c972d5c99bc133233a079b5663b903e7d56b3b0b0216398924f7b80d09e47
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi
+  probes:
+    startup:
+      enabled: true
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 12
+    readiness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+  # Usually shares a host with webzjs: path / -> webzjs, path /mainnet -> grpcweb.
+  # Set tls.secretName to the webzjs cert secret so only one Ingress asks cert-manager.
+  ingress:
+    enabled: false
+    className: nginx
+    hosts: []
+    path: /mainnet
+    pathType: Prefix
+    backendProtocol: HTTP
+    # Streaming grpc-web: never buffer or time out a sync mid-stream (nginx only,
+    # Traefik streams by default).
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-body-size: 16m
+    tls:
+      enabled: true
+      clusterIssuer: ""
+      secretName: ""
+      sslRedirect: "true"
+
+# WebZjs web wallet, a static SPA. Needs grpcweb enabled on the same host: the
+# image resolves its proxy path /mainnet against the page origin.
+webzjs:
+  enabled: false
+  name: webzjs
+  replicas: 1
+  topologySpread:
+    enabled: true
+    whenUnsatisfiable: ScheduleAnyway
+  image:
+    repository: ghcr.io/zecrocks/webzjs-wallet
+    tag: a621426
+    hash: 163f9f0ce2e81f058f882adeb9927af65144b6512da406771ba2d0ea21f3fedd
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+  probes:
+    startup:
+      enabled: true
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 12
+    readiness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    liveness:
+      enabled: true
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+  # tls.hosts: list a subset of hosts to put on the cert when an edge proxy owns
+  # the public name (its ACME would fail here).
+  ingress:
+    enabled: false
+    className: nginx
+    hosts: []
+    path: /
+    pathType: Prefix
+    backendProtocol: HTTP
+    annotations: {}
+    tls:
+      enabled: true
+      clusterIssuer: letsencrypt-prod
+      secretName: ""
+      sslRedirect: "true"

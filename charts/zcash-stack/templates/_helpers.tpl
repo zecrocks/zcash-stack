@@ -190,6 +190,8 @@ Usage:
 zcash-stack.ingress - standard networking.k8s.io/v1 Ingress for a service:
 multiple hosts to one backend, parameterizable class/annotations, gRPC, and TLS via
 cert-manager (set tls.clusterIssuer) or a bring-your-own Secret (set tls.secretName).
+tls.hosts narrows the cert to a subset of hosts, for names that route here but are
+ACMEd elsewhere (e.g. an edge proxy owns the public name). Default: all hosts.
 gRPC on Traefik emits a native IngressRoute (h2c) + Certificate instead.
 Usage:
   {{- include "zcash-stack.ingress" (dict
@@ -226,7 +228,7 @@ metadata:
 spec:
   secretName: {{ $secretName | quote }}
   dnsNames:
-  {{- range $hosts }}
+  {{- range ($tls.hosts | default $hosts) }}
     - {{ . | quote }}
   {{- end }}
   issuerRef:
@@ -283,7 +285,7 @@ spec:
   {{- if $tls.enabled }}
   tls:
     - hosts:
-      {{- range $hosts }}
+      {{- range ($tls.hosts | default $hosts) }}
         - {{ . | quote }}
       {{- end }}
       secretName: {{ $secretName | quote }}

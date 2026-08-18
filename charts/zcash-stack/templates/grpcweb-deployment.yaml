@@ -1,0 +1,72 @@
+{{- if .Values.grpcweb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.grpcweb.name }}
+spec:
+  replicas: {{ .Values.grpcweb.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: {{ .Values.grpcweb.name }}
+  template:
+    metadata:
+      annotations:
+        # Roll the pod when envoy.yaml changes (config is read only at startup).
+        checksum/config: {{ include (print $.Template.BasePath "/grpcweb-configmap.yaml") . | sha256sum }}
+      labels:
+        app: {{ .Values.grpcweb.name }}
+    spec:
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.grpcweb.topologySpread "name" .Values.grpcweb.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
+      containers:
+        - name: grpcweb
+          image: {{ .Values.grpcweb.image.repository }}:{{ .Values.grpcweb.image.tag }}{{ with .Values.grpcweb.image.hash }}@sha256:{{ . }}{{ end }}
+          imagePullPolicy: {{ .Values.grpcweb.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+              name: grpcweb-http
+          {{- if .Values.grpcweb.probes.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: grpcweb-http
+            periodSeconds: {{ .Values.grpcweb.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.grpcweb.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.grpcweb.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if .Values.grpcweb.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: grpcweb-http
+            periodSeconds: {{ .Values.grpcweb.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.grpcweb.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.grpcweb.probes.readiness.failureThreshold }}
+            successThreshold: {{ .Values.grpcweb.probes.readiness.successThreshold }}
+          {{- end }}
+          {{- if .Values.grpcweb.probes.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: grpcweb-http
+            periodSeconds: {{ .Values.grpcweb.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.grpcweb.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.grpcweb.probes.liveness.failureThreshold }}
+            successThreshold: {{ .Values.grpcweb.probes.liveness.successThreshold }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/envoy
+              readOnly: true
+          resources:
+            {{- toYaml .Values.grpcweb.resources | nindent 12 }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.grpcweb.name }}-configmap
+{{- end }}

@@ -1,0 +1,8 @@
+{{- if .Values.webzjs.enabled }}
+{{- include "zcash-stack.ingress" (dict
+      "ctx" $
+      "svc" .Values.webzjs.ingress
+      "name" (printf "%s-%s" .Release.Name .Values.webzjs.name)
+      "serviceName" .Values.webzjs.name
+      "servicePort" .Values.webzjs.service.port) }}
+{{- end }}

@@ -1,0 +1,61 @@
+{{- if .Values.webzjs.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.webzjs.name }}
+spec:
+  replicas: {{ .Values.webzjs.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: {{ .Values.webzjs.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.webzjs.name }}
+    spec:
+      {{- include "zcash-stack.topologySpread" (dict "cfg" .Values.webzjs.topologySpread "name" .Values.webzjs.name) | nindent 6 }}
+      {{- include "zcash-stack.imagePullSecrets" $ | nindent 6 }}
+      containers:
+        - name: webzjs
+          image: {{ .Values.webzjs.image.repository }}:{{ .Values.webzjs.image.tag }}{{ with .Values.webzjs.image.hash }}@sha256:{{ . }}{{ end }}
+          imagePullPolicy: {{ .Values.webzjs.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+              name: webzjs-http
+          {{- if .Values.webzjs.probes.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: webzjs-http
+            periodSeconds: {{ .Values.webzjs.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.webzjs.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.webzjs.probes.startup.failureThreshold }}
+          {{- end }}
+          {{- if .Values.webzjs.probes.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: webzjs-http
+            periodSeconds: {{ .Values.webzjs.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.webzjs.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.webzjs.probes.readiness.failureThreshold }}
+            successThreshold: {{ .Values.webzjs.probes.readiness.successThreshold }}
+          {{- end }}
+          {{- if .Values.webzjs.probes.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: webzjs-http
+            periodSeconds: {{ .Values.webzjs.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.webzjs.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.webzjs.probes.liveness.failureThreshold }}
+            successThreshold: {{ .Values.webzjs.probes.liveness.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.webzjs.resources | nindent 12 }}
+{{- end }}

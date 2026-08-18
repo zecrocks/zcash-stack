@@ -1,0 +1,15 @@
+{{- if .Values.webzjs.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.webzjs.name }}
+spec:
+  type: {{ .Values.webzjs.service.type }}
+  selector:
+    app: {{ .Values.webzjs.name }}
+  ports:
+    - port: {{ .Values.webzjs.service.port }}
+      targetPort: webzjs-http
+      protocol: TCP
+      name: http
+{{- end }}
