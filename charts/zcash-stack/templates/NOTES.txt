@@ -39,14 +39,20 @@ Block explorer (HTTP) is reachable at:
 {{- end }}
 
 {{- if and .Values.grpcweb.enabled .Values.grpcweb.ingress.enabled .Values.grpcweb.ingress.hosts }}
+{{- $host := index .Values.grpcweb.ingress.hosts 0 }}
+{{- $paths := .Values.grpcweb.routes | default (list (dict "path" .Values.grpcweb.path)) }}
 
 gRPC-web proxy is reachable at:
-{{- range .Values.grpcweb.ingress.hosts }}
-  - https://{{ . }}{{ $.Values.grpcweb.path }}
+{{- range $r := $paths }}
+  - https://{{ $host }}{{ $r.path }}
 {{- end }}
-Smoke test (GetLightdInfo over grpc-web):
-  curl -s -X POST https://{{ index .Values.grpcweb.ingress.hosts 0 }}{{ .Values.grpcweb.path }}/cash.z.wallet.sdk.rpc.CompactTxStreamer/GetLightdInfo \
-    -H 'content-type: application/grpc-web+proto' -H 'x-grpc-web: 1' --data-binary $'\x00\x00\x00\x00\x00' | head -c 200
+Smoke test (GetLightdInfo over grpc-web). The frame must come from a file: a
+$'\x00...' shell argument is truncated at the first NUL and the body goes out empty.
+  printf '\x00\x00\x00\x00\x00' > /tmp/f
+  curl -s -X POST https://{{ $host }}{{ (index $paths 0).path }}/cash.z.wallet.sdk.rpc.CompactTxStreamer/GetLightdInfo \
+    -H 'content-type: application/grpc-web+proto' -H 'x-grpc-web: 1' --data-binary @/tmp/f | head -c 200
+NOTE: opening these URLs in a browser returns 415. grpc-web requires a POST with that
+content-type, which the address bar cannot send.
 {{- end }}
 
 {{- if and .Values.webzjs.enabled .Values.webzjs.ingress.enabled .Values.webzjs.ingress.hosts }}

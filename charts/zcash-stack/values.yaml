@@ -858,6 +858,20 @@ zecd:
 grpcweb:
   enabled: false
   name: grpcweb
+  # One entry per network exposed on this host. Each strips its own prefix before
+  # forwarding, so /mainnet/<rpc> and /testnet/<rpc> can front different backends.
+  # backend.host may cross namespaces (svc.<namespace>). Empty list = a single route
+  # from the path + backend keys below.
+  routes: []
+  #  - path: /mainnet
+  #    backend:
+  #      host: lightwalletd
+  #      port: 9067
+  #  - path: /testnet
+  #    backend:
+  #      host: lightwalletd.testnet
+  #      port: 9067
+  # Single-route form, used when routes is empty.
   # gRPC backend to proxy. Empty = this release's lightwalletd Service.
   backend:
     host: ""

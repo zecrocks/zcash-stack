@@ -1,6 +1,9 @@
 {{- if .Values.grpcweb.enabled }}
-{{- $backendHost := .Values.grpcweb.backend.host | default .Values.lightwalletd.name }}
-{{- $backendPort := .Values.grpcweb.backend.port | default .Values.lightwalletd.service.port }}
+{{- $g := .Values.grpcweb }}
+{{- $defHost := .Values.lightwalletd.name }}
+{{- $defPort := .Values.lightwalletd.service.port }}
+{{- /* routes is the general form; fall back to the single path + backend keys. */}}
+{{- $routes := $g.routes | default (list (dict "path" $g.path "backend" ($g.backend | default dict))) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -24,7 +27,7 @@ data:
                     route_config:
                       name: local
                       virtual_hosts:
-                        - name: lwd
+                        - name: backends
                           domains: ["*"]
                           # CORS is wide open on purpose: this is a public grpc-web
                           # endpoint for browser wallets on any origin. Do not narrow it.
@@ -40,17 +43,20 @@ data:
                           routes:
                             - match: { path: "/healthz" }
                               direct_response: { status: 200, body: { inline_string: "ok" } }
-                            - match: { prefix: "{{ .Values.grpcweb.path }}/" }
+                          {{- range $r := $routes }}
+                          {{- $name := $r.path | trimPrefix "/" | replace "/" "-" }}
+                            - match: { prefix: "{{ $r.path }}/" }
                               route:
-                                cluster: lwd
+                                cluster: {{ $name }}
                                 prefix_rewrite: "/"
                                 timeout: 0s
                                 idle_timeout: 0s
-                            - match: { path: "{{ .Values.grpcweb.path }}" }
+                            - match: { path: "{{ $r.path }}" }
                               route:
-                                cluster: lwd
+                                cluster: {{ $name }}
                                 prefix_rewrite: "/"
                                 timeout: 0s
+                          {{- end }}
                     http_filters:
                       - name: envoy.filters.http.grpc_web
                         typed_config:
@@ -62,7 +68,10 @@ data:
                         typed_config:
                           "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
       clusters:
-        - name: lwd
+      {{- range $r := $routes }}
+      {{- $b := $r.backend | default dict }}
+      {{- $name := $r.path | trimPrefix "/" | replace "/" "-" }}
+        - name: {{ $name }}
           type: STRICT_DNS
           lb_policy: ROUND_ROBIN
           # Plaintext h2 to the in-cluster gRPC backend. Small flow-control windows
@@ -76,12 +85,13 @@ data:
                   initial_stream_window_size: 1048576
                   initial_connection_window_size: 2097152
           load_assignment:
-            cluster_name: lwd
+            cluster_name: {{ $name }}
             endpoints:
               - lb_endpoints:
                   - endpoint:
                       address:
                         socket_address:
-                          address: {{ $backendHost }}
-                          port_value: {{ $backendPort }}
+                          address: {{ $b.host | default $defHost }}
+                          port_value: {{ $b.port | default $defPort }}
+      {{- end }}
 {{- end }}
