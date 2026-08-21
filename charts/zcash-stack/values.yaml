@@ -465,11 +465,9 @@ zaino:
   rpcService: zebra
   image:
     # The `-no-tls` variant, which the chart's plaintext gRPC wiring needs.
-    # 0.7.0's breaking changes are crate-level (zaino-proto, zaino-state); the
-    # zainod.toml schema is unchanged from 0.6.0.
     repository: zingodevops/zaino
-    tag: 0.7.0-no-tls
-    hash: b160021e6ea7ee0e664b3ac577433a776f1c96550439d0c0fccf5df20fcfb49d
+    tag: 0.8.0-no-tls
+    hash: 8aa3104dbfca18077c9b8e9dbfac54e6dabc4e4679afb7cf919066d8f0a599b9
     pullPolicy: IfNotPresent
 
   replicas: 1
