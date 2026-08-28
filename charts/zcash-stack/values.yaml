@@ -293,12 +293,17 @@ lightwalletd:
     # v0.5.3 fixes GHSA-m7j5-wvx3-qj6j: GetBlockRange / GetBlockRangeNullifiers could
     # return a block from an abandoned fork next to one from the current fork while the
     # ingestor repaired a reorg. They now fail Aborted instead of serving that pair.
+    # v0.5.4 caps GetTaddressBalance at the same 10000 addresses the other methods use
+    # and dedups the GetTaddressBalance / GetAddressUtxos address lists, so a repeated
+    # address no longer multiplies the backend lookups (GHSA-x4m7-3gpp-xc36, partial).
+    # Also fixes an inflated balance when a taddr is repeated, and populates
+    # lightwalletProtocolVersion in GetLightdInfo, which was always empty before.
     # EDGE CONTRACT: this backend must answer non-gRPC `OPTIONS /` with 415 and
     # /healthz with 200/503 (the Fly HAProxy edge health-checks `expect 415`).
     # Don't add a website / change the 415 response here while an HAProxy edge checks it.
     repository: electriccoinco/lightwalletd
-    tag: v0.5.3
-    hash: 123a165ae7f2707231b909c4e24f3173a9516eb0c9906f9517cddb4bf4e73fb1
+    tag: v0.5.4
+    hash: 2ae3a551e1117eea17e9742b1360fc36db0e6d0613ddcbc7f5eed68a9b34e3db
     pullPolicy: IfNotPresent
 
   # Parallel ingestor tuning (env vars). Empty = binary defaults (workers=8, window=64).
