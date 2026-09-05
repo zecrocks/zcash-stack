@@ -38,6 +38,10 @@ data:
     # How many blocks behind the tip still counts as ready. zebrad default is 2.
     ready_max_blocks_behind = {{ . }}
     {{- end }}
+    {{- with .Values.zebra.probes.readiness.maxTipAge }}
+    # Tip age before /ready fails. zebrad default 5m, checked before the lag gate.
+    ready_max_tip_age = "{{ . }}"
+    {{- end }}
     {{- end }}
     [tracing]
     use_color = false

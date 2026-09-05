@@ -136,6 +136,10 @@ zebra:
       # tight for testnet: blocks arrive in bursts, so /ready can flap, and lwd
       # (which Fatals on an RPC error) dies when all replicas dip at once.
       maxBlocksBehind: ""
+      # zebrad ready_max_tip_age, humantime string ("30m"). Unset = zebrad default 5m.
+      # Checked BEFORE maxBlocksBehind, so raising that alone still leaves /ready
+      # flapping on mainnet: 1.8% of block gaps exceed 5m with the node at tip.
+      maxTipAge: ""
       periodSeconds: 10
       timeoutSeconds: 5
       failureThreshold: 3
@@ -269,6 +273,10 @@ zakura:
       # zakura's own default is 2, which is tight for testnet: blocks arrive in bursts
       # so /ready flaps, and lwd Fatals on an RPC error when all replicas dip at once.
       maxBlocksBehind: ""
+      # zakurad ready_max_tip_age, humantime string ("30m"). Unset = zakurad default 5m.
+      # Checked BEFORE maxBlocksBehind, so raising that alone still leaves /ready
+      # flapping on mainnet: 1.8% of block gaps exceed 5m with the node at tip.
+      maxTipAge: ""
       # zakura refuses to report healthy below this many legacy peers.
       minConnectedPeers: 1
       periodSeconds: 10

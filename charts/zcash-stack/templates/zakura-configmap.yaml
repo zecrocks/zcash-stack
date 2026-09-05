@@ -75,6 +75,10 @@ data:
     # How many blocks behind the tip still counts as ready. zakura default is 2.
     ready_max_blocks_behind = {{ . }}
     {{- end }}
+    {{- with .Values.zakura.probes.readiness.maxTipAge }}
+    # Tip age before /ready fails. zakurad default 5m, checked before the lag gate.
+    ready_max_tip_age = "{{ . }}"
+    {{- end }}
 
     [metrics]
     endpoint_addr = "0.0.0.0:8080"
