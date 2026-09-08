@@ -887,6 +887,9 @@ grpcweb:
   #    backend:
   #      host: lightwalletd.testnet
   #      port: 9067
+  # Serve grpc-web calls that arrive with no network prefix (a client configured
+  # with the bare host) from this route's backend. Empty = such calls 404.
+  rootRoute: ""
   # Single-route form, used when routes is empty.
   # gRPC backend to proxy. Empty = this release's lightwalletd Service.
   backend:

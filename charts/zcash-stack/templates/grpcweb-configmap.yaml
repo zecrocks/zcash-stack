@@ -57,6 +57,37 @@ data:
                                 prefix_rewrite: "/"
                                 timeout: 0s
                           {{- end }}
+                          {{- if $g.rootRoute }}
+                          {{- $root := $g.rootRoute | trimPrefix "/" | replace "/" "-" }}
+                          {{- /* Clients that configure the bare host with no network prefix. */}}
+                            - match: { prefix: "/cash.z.wallet.sdk.rpc." }
+                              route:
+                                cluster: {{ $root }}
+                                timeout: 0s
+                                idle_timeout: 0s
+                          {{- end }}
+                          {{- /* Unmatched paths 404 through this route so the cors filter
+                                 still runs. A routeless 404 has no cors headers and a
+                                 browser reports it as a cors failure, hiding the real
+                                 problem (usually a wrong path). */}}
+                            - match:
+                                prefix: "/"
+                                headers:
+                                  - name: ":method"
+                                    string_match: { exact: "OPTIONS" }
+                              direct_response: { status: 200, body: { inline_string: "" } }
+                              response_headers_to_add:
+                                - header: { key: "access-control-allow-origin", value: "*" }
+                                  append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                                - header: { key: "access-control-allow-methods", value: "GET, POST, OPTIONS" }
+                                - header: { key: "access-control-allow-headers", value: "content-type,x-grpc-web,x-user-agent,grpc-timeout,authorization" }
+                            - match: { prefix: "/" }
+                              direct_response:
+                                status: 404
+                                body: { inline_string: "not found\n" }
+                              response_headers_to_add:
+                                - header: { key: "access-control-allow-origin", value: "*" }
+                                  append_action: OVERWRITE_IF_EXISTS_OR_ADD
                     http_filters:
                       - name: envoy.filters.http.grpc_web
                         typed_config:
