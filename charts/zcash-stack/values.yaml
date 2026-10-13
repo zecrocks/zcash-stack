@@ -613,8 +613,8 @@ dnsSeeder:
     whenUnsatisfiable: ScheduleAnyway
   image:
     repository: zfnd/dnsseeder
-    tag: v1.6.2
-    hash: 78bc7fbfc85479a2b860f6fc6f9f2ad75a6d3ff35fc9e976b67f85b1d194c5cd
+    tag: v1.7.0
+    hash: 33705efaa27a75e611b7a29431acdb0c1292c5f07b85bddd2ff7dda1ff5188ef
     pullPolicy: IfNotPresent
   # Servable peers per zone required for /ready (ZEEDER__HEALTH__READY_THRESHOLD).
   # zeeder's own default is 1, which lets a pod with a SINGLE servable peer stay in the
