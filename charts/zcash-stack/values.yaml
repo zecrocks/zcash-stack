@@ -158,15 +158,16 @@ zakura:
   name: zakura
   testnet: false
   image:
-    # 1.3.1 migrates state in place 28.0.3 -> 28.1.5, no resync.
+    # 1.5.0 renames state v28 -> v29 in place, no resync, but the old binary
+    # can't open v29. 1.6.0 is 29.1.0 with no migration and adds testnet NU7.
     # NOTE: zakurad halts on mainnet at a per-release end-of-support height,
-    # 3,501,339 (~2026-09-30) for 1.3.1. Check the CHANGELOG halt block before
+    # 3,536,467 (~2026-11-01) for 1.6.0. Check the CHANGELOG halt block before
     # pinning any version; the windows are short.
-    # Config schema is unchanged; ZakuradConfig is deny_unknown_fields, so check
-    # that before bumping. Also ships zakura-prune-state / zakura-rollback-state.
+    # ZakuradConfig is deny_unknown_fields, so check the config parses before
+    # bumping. Also ships zakura-prune-state / zakura-rollback-state.
     repository: zakuracore/zakura
-    tag: 1.3.1
-    hash: 5c40319008501550aa25cef0c3097f6b313e72a9e3a043693099f57c6cd64869
+    tag: 1.6.0
+    hash: bf53c178e9549217fce7cfaa21efc85c478129ba6dc5307d55640514affeb0ac
     pullPolicy: IfNotPresent
 
   # Each replica is a full node with its own PVC. Scale for redundancy, not load.
