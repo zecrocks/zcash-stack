@@ -310,12 +310,14 @@ lightwalletd:
     # address no longer multiplies the backend lookups (GHSA-x4m7-3gpp-xc36, partial).
     # Also fixes an inflated balance when a taddr is repeated, and populates
     # lightwalletProtocolVersion in GetLightdInfo, which was always empty before.
+    # v0.5.5 retries a failed getbestblockhash instead of exiting, and the image is
+    # now debian slim with only the binary (no curl or grpcurl, same uid 2002).
     # EDGE CONTRACT: this backend must answer non-gRPC `OPTIONS /` with 415 and
     # /healthz with 200/503 (the Fly HAProxy edge health-checks `expect 415`).
     # Don't add a website / change the 415 response here while an HAProxy edge checks it.
     repository: electriccoinco/lightwalletd
-    tag: v0.5.4
-    hash: 2ae3a551e1117eea17e9742b1360fc36db0e6d0613ddcbc7f5eed68a9b34e3db
+    tag: v0.5.5
+    hash: 483a361483531f9fa7b13c67ca69d69e394179ea31746cc0022fbe3af65ab5e0
     pullPolicy: IfNotPresent
 
   # Parallel ingestor tuning (env vars). Empty = binary defaults (workers=8, window=64).
