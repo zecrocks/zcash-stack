@@ -1,0 +1,38 @@
+name: Renovate
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Renovate log level"
+        required: false
+        default: "info"
+        type: choice
+        options: ["debug", "info", "warn"]
+  schedule:
+    # Hourly at :17. Renovate's own "schedule" in renovate.json gates when it acts.
+    - cron: "17 * * * *"
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run Renovate
+        uses: renovatebot/github-action@v46.1.14
+        env:
+          # Scope Renovate to just this repo (no autodiscovery across the org).
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          # Branch Renovate reads config from / opens PRs against.
+          RENOVATE_ONBOARDING: "false"
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
+        with:
+          # PAT with `repo` + `workflow` scopes (a classic PAT) OR a fine-grained
+          # token with Contents:RW, Pull requests:RW, Workflows:RW on this repo.
+          token: ${{ secrets.RENOVATE_TOKEN }}
