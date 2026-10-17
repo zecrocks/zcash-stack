@@ -1,0 +1,14 @@
+# Caddyfile for compose.caddy.yaml.
+#
+# Caddy obtains a Let's Encrypt certificate for $LIGHTWALLETD_DOMAIN and
+# terminates TLS on :443, forwarding to lightwalletd's gRPC endpoint.
+# Both variables come from the caddy service's environment (see .env).
+{
+	email {$CADDY_EMAIL}
+}
+
+{$LIGHTWALLETD_DOMAIN} {
+	# lightwalletd serves gRPC as plaintext HTTP/2 on 9067 (see compose.yaml);
+	# proxy to it over h2c (HTTP/2 cleartext).
+	reverse_proxy h2c://lightwalletd:9067
+}
