@@ -160,14 +160,16 @@ zakura:
   image:
     # 1.7.0 renames state v29 -> v30 in place, no resync, but the old binary
     # can't open v30. It adds mainnet NU7 at 3,543,405.
+    # 1.8.x keeps state v30.
     # NOTE: zakurad halts on mainnet at a per-release end-of-support height,
-    # 3,640,098 (~2026-12-04) for 1.7.0. Check the CHANGELOG halt block before
+    # 3,643,309 (~2026-12-05) for 1.8.6. Check the CHANGELOG halt block before
     # pinning any version; the windows are short.
+    # NOTE: x86-64 builds since 1.8.0 need BMI2 and ADX and refuse to start without them.
     # ZakuradConfig is deny_unknown_fields, so check the config parses before
     # bumping. Also ships zakura-prune-state / zakura-rollback-state.
     repository: zakuracore/zakura
-    tag: 1.7.0
-    hash: cf3b2d09a0ab3cd3a5e17cbbb676b7abe719607391402ea07d6402e9af897b6b
+    tag: 1.8.6
+    hash: e514c89b751b685686690098928507aaa994311e6b90c79373c55b0afaa45d50
     pullPolicy: IfNotPresent
 
   # Each replica is a full node with its own PVC. Scale for redundancy, not load.
