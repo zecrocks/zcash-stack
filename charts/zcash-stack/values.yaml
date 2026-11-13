@@ -910,8 +910,8 @@ grpcweb:
     whenUnsatisfiable: ScheduleAnyway
   image:
     repository: envoyproxy/envoy
-    tag: v1.33.14
-    hash: f91c972d5c99bc133233a079b5663b903e7d56b3b0b0216398924f7b80d09e47
+    tag: v1.40.2
+    hash: 8de97e654644827d62afdbf7e1d3dc9fee01a8690d410dd1c63a30dc6b6cecbb
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP
