@@ -574,8 +574,8 @@ tor:
   hiddenServicePort: 443
   image:
     repository: osminogin/tor-simple
-    tag: 0.4.9.11
-    hash: 7aef2e7d957e2236d5fac7fca8e67c15fe65e6349eb90099da1cdc26bc4caa69
+    tag: 0.4.9.16
+    hash: ba01af2d9197c5fbcf462e90906e1a0c7cb023abe6ed2efe10b23b46ca971f80
     pullPolicy: Always
 
   storageClassName: ""
