@@ -168,8 +168,8 @@ zakura:
     # ZakuradConfig is deny_unknown_fields, so check the config parses before
     # bumping. Also ships zakura-prune-state / zakura-rollback-state.
     repository: zakuracore/zakura
-    tag: 1.8.6
-    hash: e514c89b751b685686690098928507aaa994311e6b90c79373c55b0afaa45d50
+    tag: 1.8.8
+    hash: b27298f912c058fccca46472c08137d4e0ebbbecdba4242b735ccb135db063bc
     pullPolicy: IfNotPresent
 
   # Each replica is a full node with its own PVC. Scale for redundancy, not load.
