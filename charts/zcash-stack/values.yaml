@@ -721,8 +721,8 @@ zecd:
   defaultWallet: default
   image:
     repository: ghcr.io/zecrocks/zecd
-    tag: "0.6.3"
-    hash: 05676366531195f58a6e882ae5b190a53a70560fce89a92b3e798af3a8acdbe3
+    tag: "0.9.0"
+    hash: 6a9a4d9b760c8a6534fa092b0f4d261b2b869a9fb1ad52d644156527a4cb4f3f
     pullPolicy: IfNotPresent
 
   replicas: 1
